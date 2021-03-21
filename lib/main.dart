@@ -52,7 +52,7 @@ class _OuRouteInformationParser extends RouteInformationParser<_OuRoutePath> {
     if (uri.pathSegments.length == 2) {
       if (uri.pathSegments[0] != 'ou') return _OuRoutePath.unknown();
       var id = uri.pathSegments[1];
-      if (id == null) return _OuRoutePath.unknown();
+      // if (id == null) return _OuRoutePath.unknown();
       return _OuRoutePath.details(id);
     }
 
