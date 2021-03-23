@@ -45,11 +45,13 @@ few paragraphs below.
 
 It's composed by three layers:
 - *Framework* in [Dart language](https://dart.dev/); it's the interface exposed to the developer, 
-with a declarative, reactive-style approach to UI. It can be described as composed by the following layers:
-  - foundation: basic functionalities and building block services such as animations, painting and gestures
-  - rendering layer: abstraction for layout's handling
-  - widgets layer: permits a composition 
-  - material and cupertino libraries
+with a declarative, reactive-style approach to UI;
+- *Engine* in C/C++; provides all the low-level, yet platform agnostic, functionalities, like graphics (through Skia), text layout, file and network I/O, accessibility support, plugin architecture, and a Dart runtime and compile toolchain;
+- *Embedder* is the platform specific "glue" needed to connect engine's functionalities to platform's entry points;
+
+
+- The framework is open source
+- During development, Flutter apps run in a VM that offers stateful hot reload of changes without needing a full recompile
 
 
 
