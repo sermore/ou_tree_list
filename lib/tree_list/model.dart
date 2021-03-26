@@ -271,3 +271,19 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     return 'TreeListModel{root: $_root, nodes: $_nodes, isLoading: $_isLoading, visibleNodes: $_visibleNodes, editable: $_editable}';
   }
 }
+
+abstract class Repository<E extends TreeNode> {
+  Future<List<E>> load();
+  Future<bool> add(E node);
+  Future update(E node);
+  Future<bool> deleteTree(E rootNode);
+}
+
+class RestRepository<E> extends Repository<E> {
+  final
+  @override
+  Future<List<E>> load() async {
+    final response = await http.get
+
+  }
+}
