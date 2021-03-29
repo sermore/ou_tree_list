@@ -211,9 +211,10 @@ class _OuEditScreenState extends State<OuEditScreen> {
             if (_formKey.currentState!.validate()) {
               _formKey.currentState!.save();
               OrgUnit modifiedOu = orgUnit.copy(name: _nameController.text, active: _active);
-              Provider.of<TreeListModel<OrgUnit>>(context, listen: false).updateNode(modifiedOu);
-              widget.showSnackbar(context, modifiedOu, 'Organizational unit ${modifiedOu.name} saved');
-              return Navigator.pop(context);
+              Provider.of<TreeListModel<OrgUnit>>(context, listen: false).updateNode(modifiedOu).then((node) {
+                widget.showSnackbar(context, modifiedOu, 'Organizational unit ${modifiedOu.name} saved');
+                Navigator.pop(context);
+              });
             }
           },
           child: const Icon(Icons.check),

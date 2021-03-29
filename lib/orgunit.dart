@@ -50,6 +50,24 @@ class OrgUnit extends TreeNode {
       bool expanded = true})
       : super(parentId: parentId, id: id, level: level, selected: selected, expanded: expanded);
 
+  static OrgUnit fromJson(Map<String, dynamic> json) {
+    return OrgUnit(
+      parentId: json['parentId'],
+      id: json['id'],
+      name: json['name'],
+      active: json['active'],
+      level: json['level'],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'parentId': parentId,
+    'id': id,
+    'level': level,
+    'name': name,
+    'active': active
+  };
+
   @override
   int get hashCode => super.hashCode ^ name.hashCode ^ active.hashCode;
 

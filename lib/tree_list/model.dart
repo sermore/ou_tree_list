@@ -1,9 +1,12 @@
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:tuple/tuple.dart';
 import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
 
 abstract class TreeNode {
   final String id;
@@ -38,6 +41,7 @@ abstract class TreeNode {
 }
 
 class TreeListModel<E extends TreeNode> extends ChangeNotifier {
+
   static List<E> _buildVisibleNodes<E extends TreeNode>(List<E> nodes, E? root) {
     List<E> result = [];
     Queue<E> parentStack = ListQueue();
@@ -66,24 +70,30 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     return result;
   }
 
+  final Repository<E> repository;
   List<E> _nodes;
   List<E> _visibleNodes;
   E? _root;
   bool _isLoading;
   bool _editable;
+  bool _forceReload;
   final E Function({E parent, int level}) create;
 
-  TreeListModel(this.create, [this._nodes = const [], this._root])
+  TreeListModel(this.create, this.repository, {bool forceReload = false})
       : _isLoading = false,
         _editable = false,
-        _visibleNodes = _buildVisibleNodes(_nodes, _root);
+        _forceReload = forceReload,
+        _nodes = [],
+        _root = null,
+        _visibleNodes = [] {
+    // repository.load().then((value) => this.nodes = value);
+  }
 
   UnmodifiableListView<E> get nodes => UnmodifiableListView(_visibleNodes);
 
   set nodes(List<E> __nodes) {
-    _isLoading = true;
     _nodes = __nodes;
-    if (root != null) {
+    if (_root != null) {
       _root = __nodes.firstWhereOrNull((n) => n.id == _root!.id);
     }
     _updateVisibleNodes();
@@ -99,7 +109,6 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
   E? get root => _root;
 
   set root(E? root) {
-    _isLoading = true;
     print('set root $root');
     _root = root;
     _updateVisibleNodes();
@@ -115,66 +124,124 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
 
   int get totalLength => _nodes.length;
 
+  void _reload() {
+    print('reload');
+    repository.load().then((list) => nodes = list);
+  }
+
   void _updateVisibleNodes() {
     _visibleNodes = _buildVisibleNodes(_nodes, _root);
     _isLoading = false;
     notifyListeners();
   }
 
-  void updateNode(E node) {
-    int replaceIndex = -1;
-    var oldNode = _nodes.firstWhereIndexedOrNull((idx, it) {
-      replaceIndex = idx;
-      return it.id == node.id;
-    });
-    _nodes[replaceIndex] = node;
-    if (_root == oldNode) {
-      _root = node;
-    }
-    _updateVisibleNodes();
-    // _uploadItems();
-  }
-
-  void deleteNode(E node) {
-    int i = _nodes.indexOf(node);
-    print('delete $node');
-    _nodes.removeAt(i);
-    // remove node's children
-    while (i < _nodes.length && _nodes[i].level > node.level) {
-      print('delete ${_nodes[i]}');
-      _nodes.removeAt(i);
-    }
-    if (_root == node) {
-      _root = null;
-    }
-    _updateVisibleNodes();
-    // _uploadItems();
-  }
-
-  E addNode(E? parent) {
-    E newNode;
-    int parentIndex = -1;
-    if (parent == null) {
-      newNode = create();
-      _nodes.insert(0, newNode);
-    } else {
-      newNode = create(
-        parent: parent,
-        level: parent.level + 1,
-      );
-      parentIndex = _nodes.indexOf(parent);
-      _nodes.insert(parentIndex + 1, newNode);
-    }
-    // expand parent if closed, in order to show the child just created
-    if (parent != null && !parent.expanded) {
-      _nodes[parentIndex] = parent.copy(expanded: true) as E;
-      if (_root == parent) {
-        _root = _nodes[parentIndex];
+  Future<E> updateNode(E node) {
+    print('update node $node');
+    _isLoading = true;
+    notifyListeners();
+    return repository.update(node).then((updatedNode) {
+      print('updatedNode $updatedNode');
+      int replaceIndex = -1;
+      var oldNode = _nodes.firstWhereIndexedOrNull((idx, it) {
+        replaceIndex = idx;
+        return it.id == node.id;
+      });
+      _nodes[replaceIndex] = updatedNode;
+      if (_root == oldNode) {
+        _root = updatedNode;
       }
+      _updateVisibleNodes();
+      return updatedNode;
+    });
+  }
+
+  Future deleteNode(E node) {
+    print('delete $node');
+    _isLoading = true;
+    return repository.deleteTree(node).then((res) {
+      print('deleted $node');
+      if (_forceReload) {
+        _reload();
+      } else {
+        int i = _nodes.indexOf(node);
+        _nodes.removeAt(i);
+        // remove node's children
+        while (i < _nodes.length && _nodes[i].level > node.level) {
+          print('delete child ${_nodes[i]}');
+          _nodes.removeAt(i);
+        }
+        if (_root == node) {
+          _root = null;
+        }
+        _updateVisibleNodes();
+      }
+    });
+  }
+
+  Future<E> addNode(E? parent) {
+    _isLoading = true;
+    E newNode = parent == null ? create() : create(parent: parent, level: parent.level + 1);
+    print('add node $newNode');
+    return repository.add(newNode).then((node) {
+      print('new node $node');
+      if (_forceReload) {
+        // TODO after reload, the position in the tree and the state of expanded nodes are lost
+        _reload();
+      } else {
+        int parentIndex = -1;
+        if (parent == null) {
+          _nodes.insert(0, node);
+        } else {
+          parentIndex = _nodes.indexOf(parent);
+          _nodes.insert(parentIndex + 1, node);
+        }
+        // expand parent if closed, in order to show the child just created
+        if (parent != null && !parent.expanded) {
+          _nodes[parentIndex] = parent.copy(expanded: true) as E;
+          if (_root == parent) {
+            _root = _nodes[parentIndex];
+          }
+        }
+        _updateVisibleNodes();
+      }
+      return node;
+    });
+  }
+
+  Future<Tuple3<E, E, bool>> moveSubTree(int oldIndex, int newIndex) {
+    print('moveSubTree $oldIndex => $newIndex');
+    final source = _visibleNodes[oldIndex];
+    int sourceIndex = _nodes.indexOf(source);
+    final target = newIndex == 0 ? _root : _visibleNodes[newIndex-1];
+
+    final targetIndex = _nodes.indexOf(target);
+    int end = sourceIndex + 1;
+    while (end < _nodes.length && _nodes[end].level > source.level) {
+      end++;
     }
-    _updateVisibleNodes();
-    // _uploadItems();
-    return newNode;
+    // trying to drop a parent into its subtree
+    if (targetIndex >= sourceIndex && targetIndex <= end) {
+      return Future.value(Tuple3<E, E, bool>(source, target, false));
+    }
+    final newSource = source.copy(parentId: target.id);
+    _nodes[sourceIndex] = newSource;
+    if(_root == source) {
+      _root = newSource;
+    }
+    return repository.update(newSource).then((node) {
+      print('moveSubTree $oldIndex[${source.id}] as child of $newIndex[${target.id}] => update $node');
+      if (_forceReload) {
+        _reload();
+      } else {
+        // extract source sub-tree and recalculate its levels in order to match target's level
+        final subList =
+        _nodes.sublist(sourceIndex, end).map((el) => el.copy(level: target.level + 1 + el.level - source.level) as E);
+        _nodes.removeRange(sourceIndex, end);
+        _nodes.insertAll(targetIndex < sourceIndex ? targetIndex + 1 : targetIndex + 1 - (end - sourceIndex), subList);
+        _updateVisibleNodes();
+      }
+      return Tuple3<E, E, bool>(newSource, target, true);
+    });
   }
 
   E? findNodeById(String id) {
@@ -188,28 +255,6 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
       end++;
     }
     return end - start;
-  }
-
-  Tuple3<E, E, bool> moveSubTree(int oldIndex, int newIndex) {
-    final source = _visibleNodes[oldIndex];
-    int start = _nodes.indexOf(source);
-    final target = _visibleNodes[newIndex];
-    final targetIndex = _nodes.indexOf(target);
-    int end = start + 1;
-    while (end < _nodes.length && _nodes[end].level > source.level) {
-      end++;
-    }
-    // trying to drop a parent into its subtree
-    if (targetIndex >= start && targetIndex <= end) {
-      return Tuple3<E, E, bool>(source, target, false);
-    }
-    // extract source sub-tree and recalculate its levels in order to match target's level
-    final subList =
-        _nodes.sublist(start, end).map((el) => el.copy(level: target.level + 1 + el.level - source.level) as E);
-    _nodes.removeRange(start, end);
-    _nodes.insertAll(targetIndex < start ? targetIndex + 1 : targetIndex + 1 - (end - start), subList);
-    _updateVisibleNodes();
-    return Tuple3<E, E, bool>(source, target, true);
   }
 
   void selectAll(bool selected) {
@@ -273,17 +318,96 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
 }
 
 abstract class Repository<E extends TreeNode> {
+  final Function(Object e) onError;
+
+  Repository(this.onError);
+
   Future<List<E>> load();
-  Future<bool> add(E node);
-  Future update(E node);
-  Future<bool> deleteTree(E rootNode);
+  Future<E> add(E node);
+  Future<E> update(E node);
+  Future deleteTree(E rootNode);
 }
 
-class RestRepository<E> extends Repository<E> {
-  final
+class SimpleRepository<E extends TreeNode> extends Repository<E> {
+
+  final List<E> Function() generate;
+
+  SimpleRepository(this.generate, {onError}) : super(onError);
+
+  @override
+  Future<E> add(E node) {
+    print('repo: add node=$node');
+    return Future.value(node);
+  }
+
+  @override
+  Future deleteTree(E rootNode) {
+    print('repo: deleteTree root=$rootNode');
+    return Future.value();
+  }
+
+  @override
+  Future<List<E>> load() {
+    return Future.delayed(Duration(seconds: 2) , () => generate());
+  }
+
+  @override
+  Future<E> update(E node) {
+    return Future.value(node);
+  }
+
+}
+
+class RestRepository<E extends TreeNode> extends Repository<E> {
+  final String uri;
+  final E Function(Map<String, dynamic> json) fromJson;
+
+  RestRepository(this.uri, this.fromJson, {required onError}) : super(onError);
+
   @override
   Future<List<E>> load() async {
-    final response = await http.get
+    var response = await http.get(Uri.http(uri, '/api/ou/1/descendants')).catchError(onError);
+    if (response.statusCode == 200) {
+      Iterable l = jsonDecode(response.body);
+      List<E> nodes = List<E>.from(l.map((json) => fromJson(json)));
+      return nodes;
+    }
+    return [];
+  }
 
+  @override
+  Future<E> add(E node) {
+    return http.post(
+      Uri.http(uri, '/api/ou/1/'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(node),
+    ).then((response) => fromJson(jsonDecode(response.body))).catchError(onError);
+  }
+
+  @override
+  Future deleteTree(E node) {
+    print('delete node $node');
+    return http.delete(
+      Uri.http(uri, '/api/ou/1/${node.id}'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    ).then((response) {
+      print('deleted node $node');
+      return response.statusCode == 200;
+    }).catchError(onError);
+  }
+
+  @override
+  Future<E> update(E node) {
+    return http.put(
+      Uri.http(uri, '/api/ou/1/${node.id}'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(node),
+    ).then((response) => fromJson(jsonDecode(response.body))).catchError(onError);
   }
 }

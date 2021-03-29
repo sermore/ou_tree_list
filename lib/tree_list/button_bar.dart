@@ -11,8 +11,7 @@ class TreeListButtonBar<E extends TreeNode> extends StatelessWidget {
 
   void _onAdd(BuildContext context) {
     final model = Provider.of<TreeListModel<E>>(context, listen: false);
-    final newNode = model.addNode(model.root);
-    onAdd?.call(context, model.root, newNode);
+    model.addNode(model.root).then((newNode) => onAdd?.call(context, model.root, newNode));
   }
 
   @override

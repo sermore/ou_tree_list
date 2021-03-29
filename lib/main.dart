@@ -21,16 +21,28 @@ class _OuEditorAppState extends State<OuEditorApp> {
   _OuRouterDelegate _routerDelegate = _OuRouterDelegate();
   _OuRouteInformationParser _routeInformationParser = _OuRouteInformationParser();
 
+  late TreeListModel<OrgUnit> _model;
+
+  @override
+  void initState() {
+    super.initState();
+    print("initialization");
+    _model = TreeListModel<OrgUnit>(
+            ({OrgUnit? parent, int level = 0}) => OrgUnit(
+            name: parent == null ? 'A new root item' : 'A new child of ${parent.name}',
+            parentId: parent?.id,
+            level: level),
+        RestRepository<OrgUnit>('localhost:8080', OrgUnit.fromJson, onError: (e) => print('errorx $e')));
+
+    _model.repository.load().then((value) => _model.nodes = value);
+  }
+  
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
         // create: (_) => (HierNodeListModel<OrgUnit>() as OrgUnitListModel)..loadOrgUnits(),
-        create: (_) => TreeListModel<OrgUnit>(
-            ({OrgUnit? parent, int level = 0}) => OrgUnit(
-                name: parent == null ? 'A new root item' : 'A new child of ${parent.name}',
-                parentId: parent?.id,
-                level: level),
-            generate(120)),
+        create: (_) => _model,
+            // SimpleRepository(() => generate(500))),
         child: MaterialApp.router(
           title: 'OrgUnit Editor App',
           routerDelegate: _routerDelegate,
