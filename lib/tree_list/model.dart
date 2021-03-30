@@ -185,7 +185,6 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     return repository.add(newNode).then((node) {
       print('new node $node');
       if (_forceReload) {
-        // TODO after reload, the position in the tree and the state of expanded nodes are lost
         _reload();
       } else {
         int parentIndex = -1;
@@ -327,7 +326,7 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
 }
 
 abstract class Repository<E extends TreeNode> {
-  final Function(Object e) onError;
+  final Function(Object e, Object stackTrace) onError;
 
   Repository(this.onError);
 
@@ -346,7 +345,7 @@ class SimpleRepository<E extends TreeNode> extends Repository<E> {
   @override
   Future<E> add(E node) {
     print('repo: add node=$node');
-    return Future.value(node);
+    return Future.value(node).catchError(onError);
   }
 
   @override
@@ -371,7 +370,7 @@ class RestRepository<E extends TreeNode> extends Repository<E> {
   final String uri;
   final E Function(Map<String, dynamic> json) fromJson;
 
-  RestRepository(this.uri, this.fromJson, {required onError}) : super(onError);
+  RestRepository(this.uri, this.fromJson, onError) : super(onError);
 
   @override
   Future<List<E>> load() async {

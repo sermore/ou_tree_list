@@ -32,7 +32,10 @@ class _OuEditorAppState extends State<OuEditorApp> {
             name: parent == null ? 'A new root item' : 'A new child of ${parent.name}',
             parentId: parent?.id,
             level: level),
-        RestRepository<OrgUnit>('localhost:8080', OrgUnit.fromJson, onError: (e) => print('errorx $e')));
+        RestRepository<OrgUnit>('localhost:8080', OrgUnit.fromJson, (ex, stackTrace) {
+          print('error during repository operation $ex');
+          throw ex;
+        }));
 
     _model.repository.load().then((value) => _model.nodes = value);
   }
