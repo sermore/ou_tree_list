@@ -80,7 +80,7 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
   final E Function({E parent, int level}) create;
 
   TreeListModel(this.create, this.repository, {bool forceReload = false})
-      : _isLoading = false,
+      : _isLoading = true,
         _editable = false,
         _forceReload = forceReload,
         _nodes = [],
@@ -356,12 +356,12 @@ class SimpleRepository<E extends TreeNode> extends Repository<E> {
 
   @override
   Future<List<E>> load() {
-    return Future.delayed(Duration(seconds: 2) , () => generate());
+    return Future.delayed(Duration(seconds: 2) , () => generate()).catchError(onError);
   }
 
   @override
   Future<E> update(E node) {
-    return Future.value(node);
+    return Future.value(node).catchError(onError);
   }
 
 }
@@ -380,6 +380,7 @@ class RestRepository<E extends TreeNode> extends Repository<E> {
       List<E> nodes = List<E>.from(l.map((json) => fromJson(json)));
       return nodes;
     }
+    print('error loading data');
     return [];
   }
 

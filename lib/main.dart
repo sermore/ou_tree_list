@@ -28,7 +28,7 @@ class _OuEditorAppState extends State<OuEditorApp> {
     super.initState();
     print("initialization");
     _model = TreeListModel<OrgUnit>(
-            ({OrgUnit? parent, int level = 0}) => OrgUnit(
+        ({OrgUnit? parent, int level = 0}) => OrgUnit(
             name: parent == null ? 'A new root item' : 'A new child of ${parent.name}',
             parentId: parent?.id,
             level: level),
@@ -37,15 +37,16 @@ class _OuEditorAppState extends State<OuEditorApp> {
           throw ex;
         }));
 
+    print('loading');
     _model.repository.load().then((value) => _model.nodes = value);
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
         // create: (_) => (HierNodeListModel<OrgUnit>() as OrgUnitListModel)..loadOrgUnits(),
         create: (_) => _model,
-            // SimpleRepository(() => generate(500))),
+        // SimpleRepository(() => generate(500))),
         child: MaterialApp.router(
           title: 'OrgUnit Editor App',
           routerDelegate: _routerDelegate,
@@ -138,6 +139,7 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
           )
       ],
       onPopPage: (route, result) {
+        print('onPopPage route=$route, result=$result');
         if (!route.didPop(result)) {
           return false;
         }
@@ -147,7 +149,7 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
         }
         _model.root = _selectedOu.isNotEmpty ? _model.findNodeById(_selectedOu.first) : null;
         show404 = false;
-        notifyListeners();
+        // notifyListeners();
 
         return true;
       },
@@ -156,6 +158,7 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
 
   @override
   Future<void> setNewRoutePath(_OuRoutePath path) async {
+    print('setNewRoutePath path=$path');
     if (path.isUnknown) {
       _selectedOu.clear();
       _model.root = null;
@@ -172,6 +175,7 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
 
       _selectedOu.addFirst(path.id!);
       _model.root = ou;
+    // } else if (_selectedOu.isNotEmpty) {
     } else {
       _selectedOu.clear();
       _model.root = null;
@@ -179,7 +183,7 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
 
     show404 = false;
   }
-  
+
   void _onReorder(BuildContext context, OrgUnit source, OrgUnit? target, bool result) {
     final msg = result
         ? 'Moved ${source.name} under ${target?.name ?? "root"}'
@@ -189,14 +193,12 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
 
   void _onRemove(context, orgUnit) {
     print('deleted $orgUnit');
-    _showSnackbar(context, orgUnit,
-        'Organizational unit ${orgUnit.name} and its children deleted');
+    _showSnackbar(context, orgUnit, 'Organizational unit ${orgUnit.name} and its children deleted');
   }
 
   void _onAdd(context, parent, orgUnit) {
     print('created $orgUnit as child of $parent');
-    _showSnackbar(context, orgUnit,
-        'Created new Organizational unit ${orgUnit.name}');
+    _showSnackbar(context, orgUnit, 'Created new Organizational unit ${orgUnit.name}');
   }
 
   void _handleOuTapped(String id) {

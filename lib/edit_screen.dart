@@ -62,9 +62,10 @@ class _OuEditScreenState extends State<OuEditScreen> {
           actions: [
             IconButton(icon: const Icon(Icons.delete_sweep),
               onPressed: () {
-                Provider.of<TreeListModel<OrgUnit>>(context, listen: false).deleteNode(orgUnit);
-                widget.onRemove(context, orgUnit);
-                return Navigator.pop(context);
+                Provider.of<TreeListModel<OrgUnit>>(context, listen: false).deleteNode(orgUnit).then((res) {
+                  widget.onRemove(context, orgUnit);
+                  Navigator.pop(context);
+                });
               },
             )
           ],
