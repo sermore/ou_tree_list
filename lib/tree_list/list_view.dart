@@ -6,7 +6,7 @@ import 'model.dart';
 class TreeListView<E extends TreeNode> extends StatelessWidget {
   final void Function(BuildContext context, E node)? onRemove;
   final void Function(BuildContext context, E parent, E node)? onAdd;
-  final void Function(BuildContext context, E source, E target, bool result)? onReorder;
+  final void Function(BuildContext context, E source, E? target, bool result)? onReorder;
   final String Function(E node) title;
   final String Function(E node)? subTitle;
 
@@ -56,7 +56,7 @@ class TreeListView<E extends TreeNode> extends StatelessWidget {
                   IconButton(
                     icon: Icon(node.expanded ? Icons.arrow_drop_down : Icons.arrow_right),
                     onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false)
-                        .updateNode(node.copy(expanded: !node.expanded)),
+                        .toggleExpandNode(node),
                   ),
                   IconButton(icon: const Icon(Icons.add), onPressed: () => _onAdd(context, node)),
                   IconButton(icon: const Icon(Icons.delete), onPressed: () => _onRemove(context, node)),
@@ -88,7 +88,7 @@ class TreeListView<E extends TreeNode> extends StatelessWidget {
                 IconButton(
                   icon: Icon(node.expanded ? Icons.arrow_drop_down : Icons.arrow_right),
                   onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false)
-                      .updateNode(node.copy(expanded: !node.expanded)),
+                      .toggleExpandNode(node),
                 ),
                 Container(padding: EdgeInsets.symmetric(horizontal: (node.level - rootLevel) * 10.0)),
                 // Icon(Icons.arrow_right),

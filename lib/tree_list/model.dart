@@ -18,7 +18,7 @@ abstract class TreeNode {
   TreeNode({this.parentId, String? id, this.level = 0, this.selected = false, this.expanded = true})
       : id = id ?? Uuid().v4();
 
-  dynamic copy({String parentId, String id, int level, bool selected, bool expanded});
+  dynamic copy({bool parentIdNull = false, String? parentId, String id, int level, bool selected, bool expanded});
 
   @override
   int get hashCode => parentId.hashCode ^ id.hashCode ^ level.hashCode ^ selected.hashCode ^ expanded.hashCode;
@@ -208,39 +208,41 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     });
   }
 
-  Future<Tuple3<E, E, bool>> moveSubTree(int oldIndex, int newIndex) {
+  Future<Tuple3<E, E?, bool>> moveSubTree(int oldIndex, int newIndex) {
     print('moveSubTree $oldIndex => $newIndex');
     final source = _visibleNodes[oldIndex];
     int sourceIndex = _nodes.indexOf(source);
+    // newIndex = 0 means before the first item, i.e. child of current root or at root level
     final target = newIndex == 0 ? _root : _visibleNodes[newIndex-1];
 
-    final targetIndex = _nodes.indexOf(target);
+    final targetIndex = target == null ? -1 : _nodes.indexOf(target);
     int end = sourceIndex + 1;
     while (end < _nodes.length && _nodes[end].level > source.level) {
       end++;
     }
     // trying to drop a parent into its subtree
-    if (targetIndex >= sourceIndex && targetIndex <= end) {
-      return Future.value(Tuple3<E, E, bool>(source, target, false));
+    if (targetIndex >= sourceIndex && targetIndex < end) {
+      print('reject, trying to move an item into its own subtree');
+      return Future.value(Tuple3<E, E?, bool>(source, target, false));
     }
-    final newSource = source.copy(parentId: target.id);
-    _nodes[sourceIndex] = newSource;
-    if(_root == source) {
-      _root = newSource;
-    }
+    final newSource = source.copy(parentId: target?.id, parentIdNull: target == null);
     return repository.update(newSource).then((node) {
-      print('moveSubTree $oldIndex[${source.id}] as child of $newIndex[${target.id}] => update $node');
+      print('moveSubTree $oldIndex[${source.id}] as child of $newIndex[${target?.id}] => update $node');
       if (_forceReload) {
         _reload();
       } else {
+        _nodes[sourceIndex] = node;
+        if(_root == source) {
+          _root = node;
+        }
         // extract source sub-tree and recalculate its levels in order to match target's level
         final subList =
-        _nodes.sublist(sourceIndex, end).map((el) => el.copy(level: target.level + 1 + el.level - source.level) as E);
+        _nodes.sublist(sourceIndex, end).map((el) => el.copy(level: (target == null ? 0 : target.level + 1) + el.level - source.level) as E);
         _nodes.removeRange(sourceIndex, end);
         _nodes.insertAll(targetIndex < sourceIndex ? targetIndex + 1 : targetIndex + 1 - (end - sourceIndex), subList);
         _updateVisibleNodes();
       }
-      return Tuple3<E, E, bool>(newSource, target, true);
+      return Tuple3<E, E?, bool>(node, target, true);
     });
   }
 
@@ -259,6 +261,13 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
 
   void selectAll(bool selected) {
     _nodes = _nodes.map((ou) => ou.copy(selected: selected) as E).toList();
+    _updateVisibleNodes();
+  }
+
+  void toggleExpandNode(node) {
+    final i = _nodes.indexOf(node);
+    final newNode = node.copy(expanded: !node.expanded);
+    _nodes[i] = newNode;
     _updateVisibleNodes();
   }
 

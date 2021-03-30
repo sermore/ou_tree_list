@@ -95,9 +95,9 @@ class OrgUnit extends TreeNode {
   }
 
   @override
-  OrgUnit copy({String? parentId, String? id, int? level, bool? selected, bool? expanded, String? name, bool? active}) {
+  OrgUnit copy({bool parentIdNull = false, String? parentId, String? id, int? level, bool? selected, bool? expanded, String? name, bool? active}) {
     return OrgUnit(
-      parentId: parentId ?? this.parentId,
+      parentId: parentIdNull ? null : parentId ?? this.parentId,
       id: id ?? this.id,
       name: name ?? this.name,
       active: active ?? this.active,

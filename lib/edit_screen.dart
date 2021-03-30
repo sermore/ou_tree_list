@@ -10,7 +10,7 @@ class OuEditScreen extends StatefulWidget {
   final String id;
   final void Function(BuildContext context, OrgUnit node) onRemove;
   final void Function(BuildContext context, OrgUnit parent, OrgUnit node) onAdd;
-  final void Function(BuildContext context, OrgUnit source, OrgUnit target, bool result) onReorder;
+  final void Function(BuildContext context, OrgUnit source, OrgUnit? target, bool result) onReorder;
   final ValueChanged<String> onTapped;
   final void Function(BuildContext context, OrgUnit orgUnit, String msg) showSnackbar;
 

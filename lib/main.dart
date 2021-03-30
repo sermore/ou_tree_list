@@ -177,10 +177,10 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
     show404 = false;
   }
   
-  void _onReorder(context, source, target, result) {
+  void _onReorder(BuildContext context, OrgUnit source, OrgUnit? target, bool result) {
     final msg = result
-        ? 'Moved ${source.name} under ${target.name}'
-        : 'Unable to move ${source.name} under one of its descendants ${target.name}';
+        ? 'Moved ${source.name} under ${target?.name ?? "root"}'
+        : 'Unable to move ${source.name} under one of its descendants ${target!.name}';
     _showSnackbar(context, source, msg);
   }
 
