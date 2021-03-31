@@ -149,7 +149,7 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
         }
         _model.root = _selectedOu.isNotEmpty ? _model.findNodeById(_selectedOu.first) : null;
         show404 = false;
-        // notifyListeners();
+        notifyListeners();
 
         return true;
       },
