@@ -175,8 +175,8 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
 
       _selectedOu.addFirst(path.id!);
       _model.root = ou;
-    // } else if (_selectedOu.isNotEmpty) {
-    } else {
+    } else if (_selectedOu.isNotEmpty) {
+    // } else {
       _selectedOu.clear();
       _model.root = null;
     }
