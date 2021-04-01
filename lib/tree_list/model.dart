@@ -1,12 +1,8 @@
 import 'dart:collection';
-import 'dart:convert';
 
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:tuple/tuple.dart';
-import 'package:uuid/uuid.dart';
-import 'package:http/http.dart' as http;
 
 abstract class TreeNode {
   final String id;
@@ -15,10 +11,10 @@ abstract class TreeNode {
   final bool selected;
   final bool expanded;
 
-  TreeNode({this.parentId, String? id, this.level = 0, this.selected = false, this.expanded = true})
-      : id = id ?? Uuid().v4();
+  TreeNode({this.parentId, required this.id, this.level = 0, this.selected = false, this.expanded = true});
 
   dynamic copy({bool parentIdNull = false, String? parentId, String id, int level, bool selected, bool expanded});
+  Map<String, dynamic> toJson();
 
   @override
   int get hashCode => parentId.hashCode ^ id.hashCode ^ level.hashCode ^ selected.hashCode ^ expanded.hashCode;
@@ -86,15 +82,17 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
         _nodes = [],
         _root = null,
         _visibleNodes = [] {
-    // repository.load().then((value) => this.nodes = value);
+    print('initial loading');
+    repository.load().then((value) => this.nodes = value);
   }
 
   UnmodifiableListView<E> get nodes => UnmodifiableListView(_visibleNodes);
 
-  set nodes(List<E> __nodes) {
-    _nodes = __nodes;
+  set nodes(List<E> list) {
+    print('nodes changed');
+    _nodes = list;
     if (_root != null) {
-      _root = __nodes.firstWhereOrNull((n) => n.id == _root!.id);
+      _root = list.firstWhereOrNull((n) => n.id == _root!.id);
     }
     _updateVisibleNodes();
   }
@@ -124,9 +122,9 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
 
   int get totalLength => _nodes.length;
 
-  void _reload() {
+  Future<void> _reload() {
     print('reload');
-    repository.load().then((list) => nodes = list);
+    return repository.load().then((list) => nodes = list);
   }
 
   void _updateVisibleNodes() {
@@ -155,13 +153,14 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     });
   }
 
-  Future deleteNode(E node) {
+  Future<void> deleteNode(E node) {
     print('delete $node');
     _isLoading = true;
+    notifyListeners();
     return repository.deleteTree(node).then((res) {
       print('deleted $node');
       if (_forceReload) {
-        _reload();
+        return _reload();
       } else {
         int i = _nodes.indexOf(node);
         _nodes.removeAt(i);
@@ -182,10 +181,11 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     _isLoading = true;
     E newNode = parent == null ? create() : create(parent: parent, level: parent.level + 1);
     print('add node $newNode');
+    notifyListeners();
     return repository.add(newNode).then((node) {
       print('new node $node');
       if (_forceReload) {
-        _reload();
+        return _reload().then((res) => node);
       } else {
         int parentIndex = -1;
         if (parent == null) {
@@ -225,10 +225,12 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
       return Future.value(Tuple3<E, E?, bool>(source, target, false));
     }
     final newSource = source.copy(parentId: target?.id, parentIdNull: target == null);
+    _isLoading = true;
+    notifyListeners();
     return repository.update(newSource).then((node) {
       print('moveSubTree $oldIndex[${source.id}] as child of $newIndex[${target?.id}] => update $node');
       if (_forceReload) {
-        _reload();
+        return _reload().then((res) => Tuple3<E, E?, bool>(node, target, true));
       } else {
         _nodes[sourceIndex] = node;
         if(_root == source) {
@@ -326,26 +328,22 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
 }
 
 abstract class Repository<E extends TreeNode> {
-  final Function(Object e, Object stackTrace) onError;
-
-  Repository(this.onError);
-
   Future<List<E>> load();
   Future<E> add(E node);
   Future<E> update(E node);
   Future deleteTree(E rootNode);
 }
 
-class SimpleRepository<E extends TreeNode> extends Repository<E> {
+class NoOpRepository<E extends TreeNode> implements Repository<E> {
 
-  final List<E> Function() generate;
+  final Future<List<E>> Function() generate;
 
-  SimpleRepository(this.generate, {onError}) : super(onError);
+  NoOpRepository(this.generate);
 
   @override
   Future<E> add(E node) {
     print('repo: add node=$node');
-    return Future.value(node).catchError(onError);
+    return Future.value(node);
   }
 
   @override
@@ -356,67 +354,12 @@ class SimpleRepository<E extends TreeNode> extends Repository<E> {
 
   @override
   Future<List<E>> load() {
-    return Future.delayed(Duration(seconds: 2) , () => generate()).catchError(onError);
+    return generate();
   }
 
   @override
   Future<E> update(E node) {
-    return Future.value(node).catchError(onError);
+    return Future.value(node);
   }
 
-}
-
-class RestRepository<E extends TreeNode> extends Repository<E> {
-  final String uri;
-  final E Function(Map<String, dynamic> json) fromJson;
-
-  RestRepository(this.uri, this.fromJson, onError) : super(onError);
-
-  @override
-  Future<List<E>> load() async {
-    var response = await http.get(Uri.http(uri, '/api/ou/1/descendants')).catchError(onError);
-    if (response.statusCode == 200) {
-      Iterable l = jsonDecode(response.body);
-      List<E> nodes = List<E>.from(l.map((json) => fromJson(json)));
-      return nodes;
-    }
-    print('error loading data');
-    return [];
-  }
-
-  @override
-  Future<E> add(E node) {
-    return http.post(
-      Uri.http(uri, '/api/ou/1/'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(node),
-    ).then((response) => fromJson(jsonDecode(response.body))).catchError(onError);
-  }
-
-  @override
-  Future deleteTree(E node) {
-    print('delete node $node');
-    return http.delete(
-      Uri.http(uri, '/api/ou/1/${node.id}'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-    ).then((response) {
-      print('deleted node $node');
-      return response.statusCode == 200;
-    }).catchError(onError);
-  }
-
-  @override
-  Future<E> update(E node) {
-    return http.put(
-      Uri.http(uri, '/api/ou/1/${node.id}'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(node),
-    ).then((response) => fromJson(jsonDecode(response.body))).catchError(onError);
-  }
 }

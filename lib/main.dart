@@ -35,10 +35,10 @@ class _OuEditorAppState extends State<OuEditorApp> {
         RestRepository<OrgUnit>('localhost:8080', OrgUnit.fromJson, (ex, stackTrace) {
           print('error during repository operation $ex');
           throw ex;
-        }));
-
-    print('loading');
-    _model.repository.load().then((value) => _model.nodes = value);
+        }),
+      // NoOpRepository<OrgUnit>(() => Future.delayed(Duration(seconds: 2), () => generate(100))),
+      //   forceReload: true,
+    );
   }
 
   @override
