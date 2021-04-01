@@ -6,42 +6,36 @@ import 'model.dart';
 class TreeListView<E extends TreeNode> extends StatelessWidget {
   final void Function(BuildContext context, E node)? onRemove;
   final void Function(BuildContext context, E parent, E node)? onAdd;
-  final void Function(BuildContext context, E source, E target, bool result)? onReorder;
+  final void Function(BuildContext context, E source, E? target, bool result)? onReorder;
   final String Function(E node) title;
   final String Function(E node)? subTitle;
 
   final ValueChanged<String>? onTapped;
 
-  TreeListView({
-    Key? key,
-    this.onAdd,
-    this.onRemove,
-    this.onReorder,
-    this.onTapped,
-    required this.title,
-    this.subTitle
-  })
+  TreeListView({Key? key, this.onAdd, this.onRemove, this.onReorder, this.onTapped, required this.title, this.subTitle})
       : super(key: key);
 
   void _onAdd(BuildContext context, E parent) {
-    E ou = Provider.of<TreeListModel<E>>(context, listen: false).addNode(parent);
-    onAdd?.call(context, parent, ou);
+    Provider.of<TreeListModel<E>>(context, listen: false)
+        .addNode(parent)
+        .then((node) => onAdd?.call(context, parent, node));
   }
 
   void _onRemove(BuildContext context, E node) {
-    Provider.of<TreeListModel<E>>(context, listen: false).deleteNode(node);
-    onRemove?.call(context, node);
+    Provider.of<TreeListModel<E>>(context, listen: false)
+        .deleteNode(node)
+        .then((value) => onRemove?.call(context, node));
   }
 
   void _onReorder(BuildContext context, int oldIndex, int newIndex) {
-    final res = Provider.of<TreeListModel<E>>(context, listen: false).moveSubTree(oldIndex, newIndex);
-    onReorder?.call(context, res.item1, res.item2, res.item3);
+    Provider.of<TreeListModel<E>>(context, listen: false)
+        .moveSubTree(oldIndex, newIndex)
+        .then((res) => onReorder?.call(context, res.item1, res.item2, res.item3));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TreeListModel<E>>(
-        builder: (context, model, _) {
+    return Consumer<TreeListModel<E>>(builder: (context, model, _) {
       if (model.editable) {
         return ReorderableListView.builder(
           key: const Key('EditableTreeList'),
@@ -62,7 +56,7 @@ class TreeListView<E extends TreeNode> extends StatelessWidget {
                   IconButton(
                     icon: Icon(node.expanded ? Icons.arrow_drop_down : Icons.arrow_right),
                     onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false)
-                          .updateNode(node.copy(expanded: !node.expanded)),
+                        .toggleExpandNode(node),
                   ),
                   IconButton(icon: const Icon(Icons.add), onPressed: () => _onAdd(context, node)),
                   IconButton(icon: const Icon(Icons.delete), onPressed: () => _onRemove(context, node)),
@@ -72,7 +66,7 @@ class TreeListView<E extends TreeNode> extends StatelessWidget {
                 title: Text(
                   title(node),
                 ),
-                  subtitle: subTitle != null ? Text(subTitle?.call(node) ?? '') : null,
+                subtitle: subTitle != null ? Text(subTitle?.call(node) ?? '') : null,
               ),
             );
           },
@@ -94,7 +88,7 @@ class TreeListView<E extends TreeNode> extends StatelessWidget {
                 IconButton(
                   icon: Icon(node.expanded ? Icons.arrow_drop_down : Icons.arrow_right),
                   onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false)
-                        .updateNode(node.copy(expanded: !node.expanded)),
+                      .toggleExpandNode(node),
                 ),
                 Container(padding: EdgeInsets.symmetric(horizontal: (node.level - rootLevel) * 10.0)),
                 // Icon(Icons.arrow_right),

@@ -1,7 +1,10 @@
 import 'dart:collection';
 import 'dart:math';
+import 'dart:convert';
 
 import 'package:english_words/english_words.dart';
+import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
 
 import 'tree_list/model.dart';
 
@@ -15,6 +18,7 @@ List<OrgUnit> generate(int len) {
       parentStack.removeFirst();
     }
     OrgUnit ou = OrgUnit(
+        id: Uuid().v4(),
         parentId: parentStack.isNotEmpty ? parentStack.first.id : null,
         name: 'o[$i],' + (parentStack.isNotEmpty ? parentStack.first.name.split(',').last : '') + ' ' + generateWordPairs().take(1).join(' '),
         level: parentStack.length);
@@ -48,7 +52,25 @@ class OrgUnit extends TreeNode {
       int level = 0,
       bool selected = false,
       bool expanded = true})
-      : super(parentId: parentId, id: id, level: level, selected: selected, expanded: expanded);
+      : super(parentId: parentId, id: id ?? Uuid().v4(), level: level, selected: selected, expanded: expanded);
+
+  static OrgUnit fromJson(Map<String, dynamic> json) {
+    return OrgUnit(
+      parentId: json['parentId'],
+      id: json['id'],
+      name: json['name'],
+      active: json['active'],
+      level: json['level'],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'parentId': parentId,
+    'id': id,
+    'level': level,
+    'name': name,
+    'active': active
+  };
 
   @override
   int get hashCode => super.hashCode ^ name.hashCode ^ active.hashCode;
@@ -67,19 +89,10 @@ class OrgUnit extends TreeNode {
     return 'OrgUnit{${super.toString()}, name: $name, active: $active}';
   }
 
-  OrgUnitEntity toEntity() {
-    return OrgUnitEntity(parentId, id, name, active, level);
-  }
-
-  static OrgUnit fromEntity(OrgUnitEntity entity) {
-    return OrgUnit(
-        parentId: entity.parentId, id: entity.id, name: entity.name, active: entity.active, level: entity.level);
-  }
-
   @override
-  OrgUnit copy({String? parentId, String? id, int? level, bool? selected, bool? expanded, String? name, bool? active}) {
+  OrgUnit copy({bool parentIdNull = false, String? parentId, String? id, int? level, bool? selected, bool? expanded, String? name, bool? active}) {
     return OrgUnit(
-      parentId: parentId ?? this.parentId,
+      parentId: parentIdNull ? null : parentId ?? this.parentId,
       id: id ?? this.id,
       name: name ?? this.name,
       active: active ?? this.active,
@@ -88,55 +101,61 @@ class OrgUnit extends TreeNode {
       expanded: expanded ?? this.expanded
     );
   }
-
-  // OrgUnit copy({String parentId, String id, int level, bool selected, bool expanded, String name, bool active}) {
-  //   return OrgUnit(
-  //       parentId: parentId ?? this.parentId,
-  //       id: id ?? this.id,
-  //       // name: name ?? this.name,
-  //       // active: active ?? this.active,
-  //       level: level ?? this.level,
-  //       selected: selected ?? this.selected,
-  //       expanded: expanded ?? this.expanded
-  //   );
-  // }
-
 }
 
-class OrgUnitEntity {
-  final String? parentId;
-  final String id;
-  final String name;
-  final bool active;
-  final int level;
+class RestRepository<E extends TreeNode> implements Repository<E> {
+  final String uri;
+  final E Function(Map<String, dynamic> json) fromJson;
+  final Function(Object e, Object stackTrace) onError;
 
-  OrgUnitEntity(this.parentId, this.id, this.name, this.active, this.level);
+  RestRepository(this.uri, this.fromJson, this.onError);
 
   @override
-  int get hashCode => parentId.hashCode ^ name.hashCode ^ id.hashCode ^ active.hashCode ^ level.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is OrgUnitEntity &&
-          runtimeType == other.runtimeType &&
-          parentId == other.parentId &&
-          name == other.name &&
-          active == other.active &&
-          id == other.id &&
-          level == other.level;
-
-  Map<String, Object?> toJson() {
-    return {'parentId': parentId, 'id': id, 'name': name, 'active': active, 'level': level};
+  Future<List<E>> load() async {
+    print('load from server');
+    var response = await http.get(Uri.http(uri, '/api/ou/1/descendants')).catchError(onError);
+    if (response.statusCode == 200) {
+      Iterable l = jsonDecode(response.body);
+      List<E> nodes = List<E>.from(l.map((json) => fromJson(json)));
+      return nodes;
+    }
+    print('error loading data');
+    return [];
   }
 
   @override
-  String toString() {
-    return 'OrgUnitEntity{id: $id, parentId: $parentId, name: $name, active: $active, level: $level}';
+  Future<E> add(E node) {
+    return http.post(
+      Uri.http(uri, '/api/ou/1/'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(node),
+    ).then((response) => fromJson(jsonDecode(response.body))).catchError(onError);
   }
 
-  static OrgUnitEntity fromJson(Map<String, Object> json) {
-    return OrgUnitEntity(json['parentId'] as String, json['id'] as String, json['name'] as String,
-        json['active'] as bool, json['level'] as int);
+  @override
+  Future deleteTree(E node) {
+    print('delete node $node');
+    return http.delete(
+      Uri.http(uri, '/api/ou/1/${node.id}'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    ).then((response) {
+      print('deleted node $node');
+      return response.statusCode == 200;
+    }).catchError(onError);
+  }
+
+  @override
+  Future<E> update(E node) {
+    return http.put(
+      Uri.http(uri, '/api/ou/1/${node.id}'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(node),
+    ).then((response) => fromJson(jsonDecode(response.body))).catchError(onError);
   }
 }

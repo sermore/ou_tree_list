@@ -14,3 +14,11 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter, view our
 [online documentation](https://flutter.dev/docs), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+TODO
+* problems after reload: the position in the tree and the state of expanded nodes are lost
+
+
+https://github.com/brianegan/flutter_architecture_samples/tree/master/change_notifier_provider
+https://medium.com/flutter/learning-flutters-new-navigation-and-routing-system-7c9068155ade
+
