@@ -28,14 +28,17 @@ class _OuEditorAppState extends State<OuEditorApp> {
     super.initState();
     print("initialization");
     _model = TreeListModel<OrgUnit>(
-        ({OrgUnit? parent, int level = 0}) => OrgUnit(
-            name: parent == null ? 'A new root item' : 'A new child of ${parent.name}',
-            parentId: parent?.id,
-            level: level),
-        RestRepository<OrgUnit>('localhost:8080', OrgUnit.fromJson, (ex, stackTrace) {
-          print('error during repository operation $ex');
-          throw ex;
-        }),
+      createNode: ({OrgUnit? parent, int level = 0}) => OrgUnit(
+          name: parent == null ? 'A new root item' : 'A new child of ${parent.name}',
+          parentId: parent?.id,
+          level: level),
+      repository: RestRepository<OrgUnit>(
+          uri: 'localhost:8080',
+          fromJson: OrgUnit.fromJson,
+          onError: (ex, stackTrace) {
+            print('error during repository operation $ex');
+            throw ex;
+          }),
       // NoOpRepository<OrgUnit>(() => Future.delayed(Duration(seconds: 2), () => generate(100))),
       //   forceReload: true,
     );
@@ -176,7 +179,7 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
       _selectedOu.addFirst(path.id!);
       _model.root = ou;
     } else if (_selectedOu.isNotEmpty) {
-    // } else {
+      // } else {
       _selectedOu.clear();
       _model.root = null;
     }

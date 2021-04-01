@@ -1,6 +1,6 @@
 import 'dart:collection';
-import 'dart:math';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:english_words/english_words.dart';
 import 'package:http/http.dart' as http;
@@ -20,7 +20,10 @@ List<OrgUnit> generate(int len) {
     OrgUnit ou = OrgUnit(
         id: Uuid().v4(),
         parentId: parentStack.isNotEmpty ? parentStack.first.id : null,
-        name: 'o[$i],' + (parentStack.isNotEmpty ? parentStack.first.name.split(',').last : '') + ' ' + generateWordPairs().take(1).join(' '),
+        name: 'o[$i],' +
+            (parentStack.isNotEmpty ? parentStack.first.name.split(',').last : '') +
+            ' ' +
+            generateWordPairs().take(1).join(' '),
         level: parentStack.length);
     list.add(ou);
     parentStack.addFirst(ou);
@@ -28,31 +31,24 @@ List<OrgUnit> generate(int len) {
   return list;
 }
 
-/// Loads remote data
-///
-/// Call this initially and when the user manually refreshes
-Future<void> load(TreeListModel<OrgUnit> model) {
-  model.isLoading = true;
-  model.nodes = generate(120);
-  return Future.delayed(Duration(seconds: 2), () {
-    model.isLoading = false;
-    print('initialized');
-  });
-}
-
-class OrgUnit extends TreeNode {
-  String name;
-  bool active;
+class OrgUnit with TreeNode {
+  final String? parentId;
+  final String id;
+  final int level;
+  final bool selected;
+  final bool expanded;
+  final String name;
+  final bool active;
 
   OrgUnit(
-      {String? parentId,
+      {this.parentId,
       String? id,
       this.name = '',
       this.active = true,
-      int level = 0,
-      bool selected = false,
-      bool expanded = true})
-      : super(parentId: parentId, id: id ?? Uuid().v4(), level: level, selected: selected, expanded: expanded);
+      this.level = 0,
+      this.selected = false,
+      this.expanded = true})
+      : id = id ?? Uuid().v4();
 
   static OrgUnit fromJson(Map<String, dynamic> json) {
     return OrgUnit(
@@ -64,13 +60,27 @@ class OrgUnit extends TreeNode {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'parentId': parentId,
-    'id': id,
-    'level': level,
-    'name': name,
-    'active': active
-  };
+  Map<String, dynamic> toJson() => {'parentId': parentId, 'id': id, 'level': level, 'name': name, 'active': active};
+
+  @override
+  OrgUnit copy(
+      {bool parentIdNull = false,
+        String? parentId,
+        String? id,
+        int? level,
+        bool? selected,
+        bool? expanded,
+        String? name,
+        bool? active}) {
+    return OrgUnit(
+        parentId: parentIdNull ? null : parentId ?? this.parentId,
+        id: id ?? this.id,
+        name: name ?? this.name,
+        active: active ?? this.active,
+        level: level ?? this.level,
+        selected: selected ?? this.selected,
+        expanded: expanded ?? this.expanded);
+  }
 
   @override
   int get hashCode => super.hashCode ^ name.hashCode ^ active.hashCode;
@@ -88,19 +98,6 @@ class OrgUnit extends TreeNode {
   String toString() {
     return 'OrgUnit{${super.toString()}, name: $name, active: $active}';
   }
-
-  @override
-  OrgUnit copy({bool parentIdNull = false, String? parentId, String? id, int? level, bool? selected, bool? expanded, String? name, bool? active}) {
-    return OrgUnit(
-      parentId: parentIdNull ? null : parentId ?? this.parentId,
-      id: id ?? this.id,
-      name: name ?? this.name,
-      active: active ?? this.active,
-      level: level ?? this.level,
-      selected: selected ?? this.selected,
-      expanded: expanded ?? this.expanded
-    );
-  }
 }
 
 class RestRepository<E extends TreeNode> implements Repository<E> {
@@ -108,7 +105,7 @@ class RestRepository<E extends TreeNode> implements Repository<E> {
   final E Function(Map<String, dynamic> json) fromJson;
   final Function(Object e, Object stackTrace) onError;
 
-  RestRepository(this.uri, this.fromJson, this.onError);
+  RestRepository({required this.uri, required this.fromJson, required this.onError});
 
   @override
   Future<List<E>> load() async {
@@ -125,17 +122,20 @@ class RestRepository<E extends TreeNode> implements Repository<E> {
 
   @override
   Future<E> add(E node) {
-    return http.post(
-      Uri.http(uri, '/api/ou/1/'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(node),
-    ).then((response) => fromJson(jsonDecode(response.body))).catchError(onError);
+    return http
+        .post(
+          Uri.http(uri, '/api/ou/1/'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(node),
+        )
+        .then((response) => fromJson(jsonDecode(response.body)))
+        .catchError(onError);
   }
 
   @override
-  Future deleteTree(E node) {
+  Future deleteSubTree(E node) {
     print('delete node $node');
     return http.delete(
       Uri.http(uri, '/api/ou/1/${node.id}'),
@@ -150,12 +150,15 @@ class RestRepository<E extends TreeNode> implements Repository<E> {
 
   @override
   Future<E> update(E node) {
-    return http.put(
-      Uri.http(uri, '/api/ou/1/${node.id}'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(node),
-    ).then((response) => fromJson(jsonDecode(response.body))).catchError(onError);
+    return http
+        .put(
+          Uri.http(uri, '/api/ou/1/${node.id}'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(node),
+        )
+        .then((response) => fromJson(jsonDecode(response.body)))
+        .catchError(onError);
   }
 }

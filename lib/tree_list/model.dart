@@ -4,16 +4,15 @@ import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
 import 'package:tuple/tuple.dart';
 
-abstract class TreeNode {
-  final String id;
-  final String? parentId;
-  final int level;
-  final bool selected;
-  final bool expanded;
-
-  TreeNode({this.parentId, required this.id, this.level = 0, this.selected = false, this.expanded = true});
+mixin TreeNode {
+  String get id;
+  String? get parentId;
+  int get level;
+  bool get selected;
+  bool get expanded;
 
   dynamic copy({bool parentIdNull = false, String? parentId, String id, int level, bool selected, bool expanded});
+
   Map<String, dynamic> toJson();
 
   @override
@@ -38,34 +37,7 @@ abstract class TreeNode {
 
 class TreeListModel<E extends TreeNode> extends ChangeNotifier {
 
-  static List<E> _buildVisibleNodes<E extends TreeNode>(List<E> nodes, E? root) {
-    List<E> result = [];
-    Queue<E> parentStack = ListQueue();
-    // find root node position
-    int start = root != null ? nodes.indexOf(root) + 1 : 0;
-    int i;
-    // start iterating the list beginning from the item next to the root
-    for (i = start; i < nodes.length && (root != null ? nodes[i].level > root.level : true); i++) {
-      E current = nodes[i];
-      // discard all items on top of parent's stack for which there is no possible childrens, identifying the parent owning current item
-      while (parentStack.isNotEmpty && parentStack.first.id != current.parentId) {
-        parentStack.removeFirst();
-      }
-      if (parentStack.isEmpty || parentStack.first.expanded) {
-        // if parent node is expanded, add the current item to result and add it to the top of the parent's stack
-        result.add(current);
-        parentStack.addFirst(current);
-      } else {
-        // parent node is not expanded, skip all current node's children
-        while (i + 1 < nodes.length && nodes[i + 1].level > current.level) {
-          i++;
-        }
-      }
-    }
-    print('rebuild visibileNodes start=$start, end=$i, length=${result.length}, root=$root');
-    return result;
-  }
-
+  final E Function({E parent, int level}) createNode;
   final Repository<E> repository;
   List<E> _nodes;
   List<E> _visibleNodes;
@@ -73,9 +45,8 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
   bool _isLoading;
   bool _editable;
   bool _forceReload;
-  final E Function({E parent, int level}) create;
 
-  TreeListModel(this.create, this.repository, {bool forceReload = false})
+  TreeListModel({required this.createNode, required this.repository, bool forceReload = false})
       : _isLoading = true,
         _editable = false,
         _forceReload = forceReload,
@@ -127,6 +98,34 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     return repository.load().then((list) => nodes = list);
   }
 
+  List<E> _buildVisibleNodes<E extends TreeNode>(List<E> nodes, E? root) {
+    List<E> result = [];
+    Queue<E> parentStack = ListQueue();
+    // find root node position
+    int start = root != null ? nodes.indexOf(root) + 1 : 0;
+    int i;
+    // start iterating the list beginning from the item next to the root
+    for (i = start; i < nodes.length && (root != null ? nodes[i].level > root.level : true); i++) {
+      E current = nodes[i];
+      // discard all items on top of parent's stack for which there is no possible childrens, identifying the parent owning current item
+      while (parentStack.isNotEmpty && parentStack.first.id != current.parentId) {
+        parentStack.removeFirst();
+      }
+      if (parentStack.isEmpty || parentStack.first.expanded) {
+        // if parent node is expanded, add the current item to result and add it to the top of the parent's stack
+        result.add(current);
+        parentStack.addFirst(current);
+      } else {
+        // parent node is not expanded, skip all current node's children
+        while (i + 1 < nodes.length && nodes[i + 1].level > current.level) {
+          i++;
+        }
+      }
+    }
+    print('rebuild visibileNodes start=$start, end=$i, length=${result.length}, root=$root');
+    return result;
+  }
+
   void _updateVisibleNodes() {
     _visibleNodes = _buildVisibleNodes(_nodes, _root);
     _isLoading = false;
@@ -153,11 +152,11 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     });
   }
 
-  Future<void> deleteNode(E node) {
+  Future<void> deleteSubTree(E node) {
     print('delete $node');
     _isLoading = true;
     notifyListeners();
-    return repository.deleteTree(node).then((res) {
+    return repository.deleteSubTree(node).then((res) {
       print('deleted $node');
       if (_forceReload) {
         return _reload();
@@ -179,7 +178,7 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
 
   Future<E> addNode(E? parent) {
     _isLoading = true;
-    E newNode = parent == null ? create() : create(parent: parent, level: parent.level + 1);
+    E newNode = parent == null ? createNode() : createNode(parent: parent, level: parent.level + 1);
     print('add node $newNode');
     notifyListeners();
     return repository.add(newNode).then((node) {
@@ -212,7 +211,7 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     final source = _visibleNodes[oldIndex];
     int sourceIndex = _nodes.indexOf(source);
     // newIndex = 0 means before the first item, i.e. child of current root or at root level
-    final target = newIndex == 0 ? _root : _visibleNodes[newIndex-1];
+    final target = newIndex == 0 ? _root : _visibleNodes[newIndex - 1];
 
     final targetIndex = target == null ? -1 : _nodes.indexOf(target);
     int end = sourceIndex + 1;
@@ -233,12 +232,13 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
         return _reload().then((res) => Tuple3<E, E?, bool>(node, target, true));
       } else {
         _nodes[sourceIndex] = node;
-        if(_root == source) {
+        if (_root == source) {
           _root = node;
         }
         // extract source sub-tree and recalculate its levels in order to match target's level
-        final subList =
-        _nodes.sublist(sourceIndex, end).map((el) => el.copy(level: (target == null ? 0 : target.level + 1) + el.level - source.level) as E);
+        final subList = _nodes
+            .sublist(sourceIndex, end)
+            .map((el) => el.copy(level: (target == null ? 0 : target.level + 1) + el.level - source.level) as E);
         _nodes.removeRange(sourceIndex, end);
         _nodes.insertAll(targetIndex < sourceIndex ? targetIndex + 1 : targetIndex + 1 - (end - sourceIndex), subList);
         _updateVisibleNodes();
@@ -302,7 +302,7 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     do {
       node = _nodes.firstWhereOrNull((n) => n.selected);
       if (node != null) {
-        deleteNode(node);
+        deleteSubTree(node);
       }
     } while (node != null);
     _updateVisibleNodes();
@@ -329,13 +329,15 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
 
 abstract class Repository<E extends TreeNode> {
   Future<List<E>> load();
+
   Future<E> add(E node);
+
   Future<E> update(E node);
-  Future deleteTree(E rootNode);
+
+  Future deleteSubTree(E rootNode);
 }
 
 class NoOpRepository<E extends TreeNode> implements Repository<E> {
-
   final Future<List<E>> Function() generate;
 
   NoOpRepository(this.generate);
@@ -347,7 +349,7 @@ class NoOpRepository<E extends TreeNode> implements Repository<E> {
   }
 
   @override
-  Future deleteTree(E rootNode) {
+  Future deleteSubTree(E rootNode) {
     print('repo: deleteTree root=$rootNode');
     return Future.value();
   }
@@ -361,5 +363,4 @@ class NoOpRepository<E extends TreeNode> implements Repository<E> {
   Future<E> update(E node) {
     return Future.value(node);
   }
-
 }

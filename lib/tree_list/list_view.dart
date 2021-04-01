@@ -23,7 +23,7 @@ class TreeListView<E extends TreeNode> extends StatelessWidget {
 
   void _onRemove(BuildContext context, E node) {
     Provider.of<TreeListModel<E>>(context, listen: false)
-        .deleteNode(node)
+        .deleteSubTree(node)
         .then((value) => onRemove?.call(context, node));
   }
 

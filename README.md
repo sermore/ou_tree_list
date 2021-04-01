@@ -17,7 +17,8 @@ samples, guidance on mobile development, and a full API reference.
 
 TODO
 * problems after reload: the position in the tree and the state of expanded nodes are lost
-
+* reloading a page detail produce a 404
+* test
 
 https://github.com/brianegan/flutter_architecture_samples/tree/master/change_notifier_provider
 https://medium.com/flutter/learning-flutters-new-navigation-and-routing-system-7c9068155ade
