@@ -42,6 +42,8 @@ class _OuEditorAppState extends State<OuEditorApp> {
       // NoOpRepository<OrgUnit>(() => Future.delayed(Duration(seconds: 2), () => generate(100))),
       //   forceReload: true,
     );
+    print('initial loading');
+    _model.load();
   }
 
   @override

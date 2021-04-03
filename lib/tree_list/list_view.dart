@@ -94,6 +94,7 @@ class TreeListView<E extends TreeNode> extends StatelessWidget {
                 // Icon(Icons.arrow_right),
               ]),
               title: Text(title(node)),
+              subtitle: subTitle != null ? Text(subTitle?.call(node) ?? '') : null,
             );
           },
         );

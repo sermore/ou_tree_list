@@ -52,10 +52,7 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
         _forceReload = forceReload,
         _nodes = [],
         _root = null,
-        _visibleNodes = [] {
-    print('initial loading');
-    repository.load().then((value) => this.nodes = value);
-  }
+        _visibleNodes = [];
 
   UnmodifiableListView<E> get nodes => UnmodifiableListView(_visibleNodes);
 
@@ -93,11 +90,6 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
 
   int get totalLength => _nodes.length;
 
-  Future<void> _reload() {
-    print('reload');
-    return repository.load().then((list) => nodes = list);
-  }
-
   List<E> _buildVisibleNodes<E extends TreeNode>(List<E> nodes, E? root) {
     List<E> result = [];
     Queue<E> parentStack = ListQueue();
@@ -124,6 +116,17 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     }
     print('rebuild visibileNodes start=$start, end=$i, length=${result.length}, root=$root');
     return result;
+  }
+
+  Future<List<E>> load() {
+    _isLoading = true;
+    notifyListeners();
+    return _load();
+  }
+
+  Future<List<E>> _load() {
+    print('reload');
+    return repository.load().then((list) => nodes = list);
   }
 
   void _updateVisibleNodes() {
@@ -153,19 +156,21 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
   }
 
   Future<void> deleteSubTree(E node) {
-    print('delete $node');
+    print('delete sub-tree root $node');
     _isLoading = true;
     notifyListeners();
     return repository.deleteSubTree(node).then((res) {
-      print('deleted $node');
+      print('sub-tree deleted root $node');
       if (_forceReload) {
-        return _reload();
+        return _load();
       } else {
+        // sync local nodes to sub-tree removal
         int i = _nodes.indexOf(node);
+        print('remove root=$node');
         _nodes.removeAt(i);
         // remove node's children
         while (i < _nodes.length && _nodes[i].level > node.level) {
-          print('delete child ${_nodes[i]}');
+          print('remove child ${_nodes[i]}');
           _nodes.removeAt(i);
         }
         if (_root == node) {
@@ -184,7 +189,7 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     return repository.add(newNode).then((node) {
       print('new node $node');
       if (_forceReload) {
-        return _reload().then((res) => node);
+        return _load().then((res) => node);
       } else {
         int parentIndex = -1;
         if (parent == null) {
@@ -201,8 +206,8 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
           }
         }
         _updateVisibleNodes();
+        return node;
       }
-      return node;
     });
   }
 
@@ -229,7 +234,7 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     return repository.update(newSource).then((node) {
       print('moveSubTree $oldIndex[${source.id}] as child of $newIndex[${target?.id}] => update $node');
       if (_forceReload) {
-        return _reload().then((res) => Tuple3<E, E?, bool>(node, target, true));
+        return _load().then((res) => Tuple3<E, E?, bool>(node, target, true));
       } else {
         _nodes[sourceIndex] = node;
         if (_root == source) {
@@ -334,7 +339,7 @@ abstract class Repository<E extends TreeNode> {
 
   Future<E> update(E node);
 
-  Future deleteSubTree(E rootNode);
+  Future<void> deleteSubTree(E rootNode);
 }
 
 class NoOpRepository<E extends TreeNode> implements Repository<E> {
@@ -349,7 +354,7 @@ class NoOpRepository<E extends TreeNode> implements Repository<E> {
   }
 
   @override
-  Future deleteSubTree(E rootNode) {
+  Future<void> deleteSubTree(E rootNode) {
     print('repo: deleteTree root=$rootNode');
     return Future.value();
   }

@@ -35,14 +35,14 @@ class OuListScreen extends StatelessWidget {
         body: Selector<TreeListModel<OrgUnit>, bool>(
             selector: (context, model) => model.isLoading,
             builder: (context, isLoading, _) {
-              if (isLoading) {
-                return Center(
+              return Stack(
+                children: [
+              if (isLoading) Center(
                   child: CircularProgressIndicator(
                     key: const Key('OULoading'),
                   ),
-                );
-              }
-              return Column(
+                ),
+              Column(
                 children: [
                   TreeListButtonBar<OrgUnit>(
                     title: (ou) => ou.name,
@@ -58,7 +58,7 @@ class OuListScreen extends StatelessWidget {
                         onReorder: onReorder,
                   ))
                 ],
-              );
-            }));
+              )
+            ]);}));
   }
 }

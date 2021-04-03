@@ -27,6 +27,11 @@ class TreeListButtonBar<E extends TreeNode> extends StatelessWidget {
             tooltip: 'Toggle tree expansion',
             onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpansion()
         ),
+        IconButton(
+            onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).load(),
+            icon: const Icon(Icons.autorenew, semanticLabel: "Reload",),
+            tooltip: "Reload",
+        ),
         if (model.editable)
           IconButton(
               icon: const Icon(Icons.add),

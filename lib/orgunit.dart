@@ -135,7 +135,7 @@ class RestRepository<E extends TreeNode> implements Repository<E> {
   }
 
   @override
-  Future deleteSubTree(E node) {
+  Future<void> deleteSubTree(E node) {
     print('delete node $node');
     return http.delete(
       Uri.http(uri, '/api/ou/1/${node.id}'),
