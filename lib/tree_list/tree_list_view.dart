@@ -3,16 +3,75 @@ import 'package:provider/provider.dart';
 
 import 'model.dart';
 
+abstract class TreeListTile<E extends TreeNode> {
+  final E node;
+  final int rootLevel;
+  final void Function(BuildContext context, E node)? onRemove;
+  final void Function(BuildContext context, E parent, E node)? onAdd;
+
+  TreeListTile({this.onRemove, this.onAdd, required this.node, required this.rootLevel});
+
+  Widget buildTitle(BuildContext context, TreeListModel<E> model);
+
+  Widget buildSubtitle(BuildContext context, TreeListModel<E> model);
+
+  Widget buildLeading(BuildContext context, TreeListModel<E> model) {
+    if (model.editable) {
+      return Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
+        IconButton(
+          icon: Icon(node.expanded ? Icons.arrow_drop_down : Icons.arrow_right),
+          onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpandNode(node),
+        ),
+        Container(padding: EdgeInsets.symmetric(horizontal: (node.level - rootLevel) * 10.0)),
+      ]);
+    } else {
+      return Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
+        IconButton(
+          icon: Icon(node.expanded ? Icons.arrow_drop_down : Icons.arrow_right),
+          onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpandNode(node),
+        ),
+        IconButton(icon: const Icon(Icons.add), onPressed: () => _onAdd(context, node)),
+        IconButton(icon: const Icon(Icons.delete), onPressed: () => _onRemove(context, node)),
+        Container(padding: EdgeInsets.symmetric(horizontal: (node.level - rootLevel) * 10.0)),
+        Icon(Icons.arrow_right),
+      ]);
+    }
+    // Icon(Icons.arrow_right),
+  }
+
+  void _onAdd(BuildContext context, E parent) {
+    Provider.of<TreeListModel<E>>(context, listen: false)
+        .addNode(parent)
+        .then((node) => onAdd?.call(context, parent, node));
+  }
+
+  void _onRemove(BuildContext context, E node) {
+    Provider.of<TreeListModel<E>>(context, listen: false)
+        .deleteSubTree(node)
+        .then((value) => onRemove?.call(context, node));
+  }
+
+}
+
 class TreeListView<E extends TreeNode> extends StatelessWidget {
   final void Function(BuildContext context, E node)? onRemove;
   final void Function(BuildContext context, E parent, E node)? onAdd;
   final void Function(BuildContext context, E source, E? target, bool result)? onReorder;
+  final ListTile? listTile;
   final String Function(E node) title;
   final String Function(E node)? subTitle;
 
   final ValueChanged<String>? onTapped;
 
-  TreeListView({Key? key, this.onAdd, this.onRemove, this.onReorder, this.onTapped, required this.title, this.subTitle})
+  TreeListView(
+      {Key? key,
+      this.onAdd,
+      this.onRemove,
+      this.onReorder,
+      this.onTapped,
+      required this.title,
+      this.subTitle,
+      this.listTile})
       : super(key: key);
 
   void _onAdd(BuildContext context, E parent) {
