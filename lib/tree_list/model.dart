@@ -137,8 +137,6 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
 
   Future<E> updateNode(E node) {
     print('update node $node');
-    _isLoading = true;
-    notifyListeners();
     return repository.update(node).then((updatedNode) {
       print('updatedNode $updatedNode');
       int replaceIndex = -1;
@@ -157,8 +155,6 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
 
   Future<void> deleteSubTree(E node) {
     print('delete sub-tree root $node');
-    _isLoading = true;
-    notifyListeners();
     return repository.deleteSubTree(node).then((res) {
       print('sub-tree deleted root $node');
       if (_forceReload) {
@@ -182,10 +178,8 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
   }
 
   Future<E> addNode(E? parent) {
-    _isLoading = true;
     E newNode = parent == null ? createNode() : createNode(parent: parent, level: parent.level + 1);
     print('add node $newNode');
-    notifyListeners();
     return repository.add(newNode).then((node) {
       print('new node $node');
       if (_forceReload) {
@@ -229,8 +223,6 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
       return Future.value(Tuple3<E, E?, bool>(source, target, false));
     }
     final newSource = source.copy(parentId: target?.id, parentIdNull: target == null);
-    _isLoading = true;
-    notifyListeners();
     return repository.update(newSource).then((node) {
       print('moveSubTree $oldIndex[${source.id}] as child of $newIndex[${target?.id}] => update $node');
       if (_forceReload) {
