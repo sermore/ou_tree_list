@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'orgunit.dart';
 import 'tree_list/button_bar.dart';
-import 'tree_list/list_view.dart';
+import 'tree_list/tree_list_view.dart';
 import 'tree_list/model.dart';
 
 class OuEditScreen extends StatefulWidget {

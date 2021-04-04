@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'orgunit.dart';
 import 'tree_list/button_bar.dart';
-import 'tree_list/list_view.dart';
+import 'tree_list/tree_list_view.dart';
 
 class OuListScreen extends StatelessWidget {
   final void Function(BuildContext context, OrgUnit node) onRemove;
