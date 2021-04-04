@@ -179,30 +179,20 @@ class _OuEditScreenState extends State<OuEditScreen> {
               ),
             ),
             if (MediaQuery.of(context).size.height > 400)
-            Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text('Children sub-tree', style: Theme.of(context).textTheme.headline6))),
-            if (MediaQuery.of(context).size.height > 400)
-            Padding(
-                padding: EdgeInsets.all(8.0),
-                child: TreeListButtonBar<OrgUnit>(
-                    key: const Key('OUButtonBar'),
-                    title: (ou) => ou.name,
-                    onAdd: (context, parent, node) => widget.onAdd(context, parent!, node),
-                )),
+            TreeListButtonBar<OrgUnit>(
+                key: const Key('OUButtonBar'),
+                title: (ou) => ou.name,
+                onAdd: (context, parent, node) => widget.onAdd(context, parent!, node),
+            ),
             if (MediaQuery.of(context).size.height > 400)
             Expanded(
-                child: Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: TreeListView<OrgUnit>(
-                        title: (ou) => ou.name,
-                        onAdd: widget.onAdd,
-                        onRemove: widget.onRemove,
-                        onReorder: widget.onReorder,
-                        onTapped: widget.onTapped,
-)))
+                child: TreeListView<OrgUnit>(
+                    title: (ou) => ou.name,
+                    onAdd: widget.onAdd,
+                    onRemove: widget.onRemove,
+                    onReorder: widget.onReorder,
+                    onTapped: widget.onTapped,
+))
           ],
         ),
         floatingActionButton: FloatingActionButton(

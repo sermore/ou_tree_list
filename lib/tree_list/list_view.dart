@@ -36,69 +36,90 @@ class TreeListView<E extends TreeNode> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<TreeListModel<E>>(builder: (context, model, _) {
-      if (model.editable) {
-        return ReorderableListView.builder(
-          key: const Key('EditableTreeList'),
-          // padding: EdgeInsets.all(8.0),
-          onReorder: (oldIndex, newIndex) => _onReorder(context, oldIndex, newIndex),
-          itemCount: model.nodes.length,
-          itemBuilder: (context, index) {
-            final root = model.root;
-            final int rootLevel = root != null ? root.level : 0;
-            final node = model.nodes[index];
-            // print(node);
-            return Dismissible(
-              key: Key('ModNodeItem__${node.id}'),
-              onDismissed: (_) => _onRemove(context, node),
-              child: ListTile(
-                onTap: () => onTapped?.call(node.id),
-                leading: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
-                  IconButton(
-                    icon: Icon(node.expanded ? Icons.arrow_drop_down : Icons.arrow_right),
-                    onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false)
-                        .toggleExpandNode(node),
-                  ),
-                  IconButton(icon: const Icon(Icons.add), onPressed: () => _onAdd(context, node)),
-                  IconButton(icon: const Icon(Icons.delete), onPressed: () => _onRemove(context, node)),
-                  Container(padding: EdgeInsets.symmetric(horizontal: (node.level - rootLevel) * 10.0)),
-                  Icon(Icons.arrow_right),
-                ]),
-                title: Text(
-                  title(node),
-                ),
-                subtitle: subTitle != null ? Text(subTitle?.call(node) ?? '') : null,
-              ),
-            );
-          },
-        );
+      if (model.isLoading) {
+        return Stack(children: [
+          Center(
+            child: CircularProgressIndicator(
+              key: const Key('__TreeListLoading__'),
+            ),
+          ),
+          buildTreeList(context, model)
+        ]);
       } else {
-        return ListView.builder(
-          key: const Key('TreeList'),
-          // padding: EdgeInsets.all(8.0),
-          itemCount: model.nodes.length,
-          itemBuilder: (context, index) {
-            final root = model.root;
-            final int rootLevel = root?.level ?? 0;
-            final node = model.nodes[index];
-            // print(node);
-            return ListTile(
-              key: Key('NodeItem__${node.id}'),
-              onTap: () => onTapped?.call(node.id),
-              leading: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
-                IconButton(
-                  icon: Icon(node.expanded ? Icons.arrow_drop_down : Icons.arrow_right),
-                  onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false)
-                      .toggleExpandNode(node),
-                ),
-                Container(padding: EdgeInsets.symmetric(horizontal: (node.level - rootLevel) * 10.0)),
-                // Icon(Icons.arrow_right),
-              ]),
-              title: Text(title(node)),
-              subtitle: subTitle != null ? Text(subTitle?.call(node) ?? '') : null,
-            );
-          },
-        );
+        return buildTreeList(context, model);
       }
     });
+  }
+
+  Widget buildTreeList(BuildContext context, TreeListModel<E> model) {
+    if (model.editable) {
+      return buildReorderableListView(context, model);
+    } else {
+      return buildListView(model);
+    }
+  }
+
+  ListView buildListView(TreeListModel<dynamic> model) {
+    return ListView.builder(
+      key: const Key('__TreeList__'),
+      // padding: EdgeInsets.all(8.0),
+      itemCount: model.nodes.length,
+      itemBuilder: (context, index) {
+        final root = model.root;
+        final int rootLevel = root?.level ?? 0;
+        final node = model.nodes[index];
+        // print(node);
+        return ListTile(
+          key: Key('__NodeItem__${node.id}__'),
+          onTap: () => onTapped?.call(node.id),
+          leading: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
+            IconButton(
+              icon: Icon(node.expanded ? Icons.arrow_drop_down : Icons.arrow_right),
+              onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpandNode(node),
+            ),
+            Container(padding: EdgeInsets.symmetric(horizontal: (node.level - rootLevel) * 10.0)),
+            // Icon(Icons.arrow_right),
+          ]),
+          title: Text(title(node)),
+          subtitle: subTitle != null ? Text(subTitle?.call(node) ?? '') : null,
+        );
+      },
+    );
+  }
+
+  ReorderableListView buildReorderableListView(BuildContext context, TreeListModel<dynamic> model) {
+    return ReorderableListView.builder(
+      key: const Key('__EditableTreeList__'),
+      // padding: EdgeInsets.all(8.0),
+      onReorder: (oldIndex, newIndex) => _onReorder(context, oldIndex, newIndex),
+      itemCount: model.nodes.length,
+      itemBuilder: (context, index) {
+        final root = model.root;
+        final int rootLevel = root != null ? root.level : 0;
+        final node = model.nodes[index];
+        // print(node);
+        return Dismissible(
+          key: Key('__ModNodeItem__${node.id}__'),
+          onDismissed: (_) => _onRemove(context, node),
+          child: ListTile(
+            onTap: () => onTapped?.call(node.id),
+            leading: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
+              IconButton(
+                icon: Icon(node.expanded ? Icons.arrow_drop_down : Icons.arrow_right),
+                onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpandNode(node),
+              ),
+              IconButton(icon: const Icon(Icons.add), onPressed: () => _onAdd(context, node)),
+              IconButton(icon: const Icon(Icons.delete), onPressed: () => _onRemove(context, node)),
+              Container(padding: EdgeInsets.symmetric(horizontal: (node.level - rootLevel) * 10.0)),
+              Icon(Icons.arrow_right),
+            ]),
+            title: Text(
+              title(node),
+            ),
+            subtitle: subTitle != null ? Text(subTitle?.call(node) ?? '') : null,
+          ),
+        );
+      },
+    );
   }
 }
