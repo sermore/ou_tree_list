@@ -6,9 +6,10 @@ import 'package:provider/provider.dart';
 
 import 'edit_screen.dart';
 import 'list_screen.dart';
-import 'localization.dart';
 import 'orgunit.dart';
 import 'tree_list/model.dart';
+
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() {
   runApp(OuEditorApp());
@@ -31,7 +32,7 @@ class _OuEditorAppState extends State<OuEditorApp> {
     print("initialization");
     _model = TreeListModel<OrgUnit>(
         ({OrgUnit? parent, int level = 0}) => OrgUnit(
-            name: parent == null ? 'A new root item' : 'A new child of ${parent.name}',
+            name: parent == null ? AppLocalizations.of(context)!.newRootItem : AppLocalizations.of(context)!.newChildItem(parent.name),
             parentId: parent?.id,
             level: level),
         RestRepository<OrgUnit>('localhost:8080', OrgUnit.fromJson, (ex, stackTrace) {
@@ -51,7 +52,7 @@ class _OuEditorAppState extends State<OuEditorApp> {
         // SimpleRepository(() => generate(500))),
         child: MaterialApp.router(
           localizationsDelegates: [
-            OuEditorAppLocalizationsDelegate(),
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -61,7 +62,7 @@ class _OuEditorAppState extends State<OuEditorApp> {
             const Locale('it', ''), // Italian, no country code
           ],
 
-          title: OuEditorAppLocalizations.of(context)!.title,
+          onGenerateTitle: (BuildContext context) => AppLocalizations.of(context)!.title,
           routerDelegate: _routerDelegate,
           routeInformationParser: _routeInformationParser,
         ));

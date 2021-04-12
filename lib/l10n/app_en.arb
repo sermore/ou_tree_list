@@ -1,6 +1,20 @@
 {
-    "title": "OrgUnit Editor App",
-    "@title": {
-      "description": "An editor for a hierarchical data structure"
+  "title": "OrgUnit Editor App",
+  "@title": {
+    "description": "An editor for a hierarchical data structure"
+  },
+  "newRootItem": "A new root item",
+  "@newRootItem": {
+    "description": "Name for new root item being created"
+  },
+  "newChildItem": "A new child of {parentName}",
+  "@newChildItem": {
+    "description": "Name for new child item being created",
+    "placeholders": {
+      "parentName": {
+        "type": "String",
+        "example": "Programmer"
+      }
     }
+  }
 }
