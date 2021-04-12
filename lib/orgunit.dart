@@ -6,30 +6,8 @@ import 'package:english_words/english_words.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
-import 'tree_list/model.dart';
+import 'tree_list/tree_list.dart';
 
-List<OrgUnit> generate(int len) {
-  Random random = Random();
-  List<OrgUnit> list = [];
-  Queue<OrgUnit> parentStack = ListQueue();
-  for (int i = 0; i < len; i++) {
-    // choose the parent to which the next item will be added
-    while (parentStack.isNotEmpty && random.nextBool()) {
-      parentStack.removeFirst();
-    }
-    OrgUnit ou = OrgUnit(
-        id: Uuid().v4(),
-        parentId: parentStack.isNotEmpty ? parentStack.first.id : null,
-        name: 'o[$i],' +
-            (parentStack.isNotEmpty ? parentStack.first.name.split(',').last : '') +
-            ' ' +
-            generateWordPairs().take(1).join(' '),
-        level: parentStack.length);
-    list.add(ou);
-    parentStack.addFirst(ou);
-  }
-  return list;
-}
 
 class OrgUnit with TreeNode {
   final String? parentId;
@@ -65,13 +43,13 @@ class OrgUnit with TreeNode {
   @override
   OrgUnit copy(
       {bool parentIdNull = false,
-        String? parentId,
-        String? id,
-        int? level,
-        bool? selected,
-        bool? expanded,
-        String? name,
-        bool? active}) {
+      String? parentId,
+      String? id,
+      int? level,
+      bool? selected,
+      bool? expanded,
+      String? name,
+      bool? active}) {
     return OrgUnit(
         parentId: parentIdNull ? null : parentId ?? this.parentId,
         id: id ?? this.id,
@@ -161,4 +139,27 @@ class RestRepository<E extends TreeNode> implements Repository<E> {
         .then((response) => fromJson(jsonDecode(response.body)))
         .catchError(onError);
   }
+}
+
+List<OrgUnit> generate(int len) {
+  Random random = Random();
+  List<OrgUnit> list = [];
+  Queue<OrgUnit> parentStack = ListQueue();
+  for (int i = 0; i < len; i++) {
+    // choose the parent to which the next item will be added
+    while (parentStack.isNotEmpty && random.nextBool()) {
+      parentStack.removeFirst();
+    }
+    OrgUnit ou = OrgUnit(
+        id: Uuid().v4(),
+        parentId: parentStack.isNotEmpty ? parentStack.first.id : null,
+        name: 'o[$i],' +
+            (parentStack.isNotEmpty ? parentStack.first.name.split(',').last : '') +
+            ' ' +
+            generateWordPairs().take(1).join(' '),
+        level: parentStack.length);
+    list.add(ou);
+    parentStack.addFirst(ou);
+  }
+  return list;
 }

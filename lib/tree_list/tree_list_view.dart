@@ -1,110 +1,23 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 
 import 'model.dart';
 
-abstract class TreeListTile<E extends TreeNode> extends StatelessWidget {
-  final E node;
-  final int rootLevel;
-  final double levelPadding;
-  final IconData nodeExpandedIcon;
-  final IconData nodeCollapsedIcon;
-  final Widget? title;
-  final Widget? subtitle;
-  final Widget? leading;
-  final void Function(BuildContext context, E node)? onRemove;
-  final void Function(BuildContext context, E parent, E node)? onAdd;
-
-  TreeListTile({this.title, this.subtitle, this.leading,
-      this.levelPadding = 10.0,
-      this.nodeExpandedIcon = Icons.arrow_drop_down,
-      this.nodeCollapsedIcon = Icons.arrow_right,
-      this.onRemove,
-      this.onAdd,
-      required this.node,
-      required this.rootLevel}) : super(
-  );
-
-  Widget buildTitle(BuildContext context, TreeListModel<E> model);
-
-  Widget buildSubtitle(BuildContext context, TreeListModel<E> model);
-
-  Widget buildLeading(BuildContext context, TreeListModel<E> model) {
-    if (model.editable) {
-      return Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
-        IconButton(
-          icon: Icon(node.expanded ? nodeExpandedIcon : nodeCollapsedIcon),
-          onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpandNode(node),
-        ),
-        Container(padding: EdgeInsets.symmetric(horizontal: (node.level - rootLevel) * levelPadding)),
-      ]);
-    } else {
-      return Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
-        IconButton(
-          icon: Icon(node.expanded ? nodeExpandedIcon : nodeCollapsedIcon),
-          onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpandNode(node),
-        ),
-        IconButton(icon: const Icon(Icons.add), onPressed: () => _onAdd(context, node)),
-        IconButton(icon: const Icon(Icons.delete), onPressed: () => _onRemove(context, node)),
-        Container(padding: EdgeInsets.symmetric(horizontal: (node.level - rootLevel) * levelPadding)),
-        Icon(nodeCollapsedIcon),
-      ]);
-    }
-    // Icon(Icons.arrow_right),
-  }
-
-  void _onAdd(BuildContext context, E parent) {
-    Provider.of<TreeListModel<E>>(context, listen: false)
-        .addNode(parent)
-        .then((node) => onAdd?.call(context, parent, node));
-  }
-
-  void _onRemove(BuildContext context, E node) {
-    Provider.of<TreeListModel<E>>(context, listen: false)
-        .deleteSubTree(node)
-        .then((value) => onRemove?.call(context, node));
-  }
-}
-
 class TreeListView<E extends TreeNode> extends StatelessWidget {
-  final void Function(BuildContext context, E node)? onRemove;
-  final void Function(BuildContext context, E parent, E node)? onAdd;
+
+  TreeListView({
+    Key? key,
+    this.onReorder,
+    this.dismissibleTile = true,
+    required this.listTileBuilder,
+  }) : super(key: key);
+
   final void Function(BuildContext context, E source, E? target, bool result)? onReorder;
-  final ListTile? listTile;
-  final ListTile? editListTile;
-  final String Function(E node) title;
-  final String Function(E node)? subTitle;
-
-  final ValueChanged<String>? onTapped;
-
-  TreeListView(
-      {Key? key,
-      this.onAdd,
-      this.onRemove,
-      this.onReorder,
-      this.onTapped,
-      required this.title,
-      this.subTitle,
-      this.listTile,
-        this.editListTile
-      }
-        )
-      : super(key: key);
-
-  void _onAdd(BuildContext context, E parent) {
-    Provider.of<TreeListModel<E>>(context, listen: false)
-        .addNode(parent)
-        .then((node) => onAdd?.call(context, parent, node));
-  }
-
-  void _onRemove(BuildContext context, E node) {
-    Provider.of<TreeListModel<E>>(context, listen: false)
-        .deleteSubTree(node)
-        .then((value) => onRemove?.call(context, node));
-  }
+  final bool dismissibleTile;
+  final TreeListTileBuilder<E> Function(BuildContext context, TreeListModel<E> model, E node, int rootLevel)
+  listTileBuilder;
 
   void _onReorder(BuildContext context, int oldIndex, int newIndex) {
     Provider.of<TreeListModel<E>>(context, listen: false)
@@ -138,90 +51,157 @@ class TreeListView<E extends TreeNode> extends StatelessWidget {
     }
   }
 
-  ListView buildListView(TreeListModel<dynamic> model) {
+  ListView buildListView(TreeListModel<E> model) {
     return ListView.builder(
       key: const Key('__TreeList__'),
       // padding: EdgeInsets.all(8.0),
       itemCount: model.nodes.length,
-      itemBuilder: (context, index) {
-        final root = model.root;
-        final int rootLevel = root?.level ?? 0;
-        final node = model.nodes[index];
-        // print(node);
-        return listTile ?? buildListTile(node, context, rootLevel);
-      },
+      itemBuilder: (context, index) => listTileBuilder(context, model, model.nodes[index], model.root?.level ?? 0).build(),
     );
   }
 
-  ReorderableListView buildReorderableListView(BuildContext context, TreeListModel<dynamic> model) {
+  ReorderableListView buildReorderableListView(BuildContext context, TreeListModel<E> model) {
     return ReorderableListView.builder(
-      key: const Key('__EditableTreeList__'),
-      // padding: EdgeInsets.all(8.0),
-      onReorder: (oldIndex, newIndex) => _onReorder(context, oldIndex, newIndex),
-      itemCount: model.nodes.length,
-      itemBuilder: (context, index) {
-        final root = model.root;
-        final int rootLevel = root != null ? root.level : 0;
-        final node = model.nodes[index];
-        // print(node);
-        return Dismissible(
-          key: Key('__ModNodeItem__${node.id}__'),
-          onDismissed: (_) => _onRemove(context, node),
-          child: editListTile ?? buildEditListTile(context, node, rootLevel),
-        );
-      },
+        key: const Key('__EditableTreeList__'),
+        // padding: EdgeInsets.all(8.0),
+        onReorder: (oldIndex, newIndex) => _onReorder(context, oldIndex, newIndex),
+        itemCount: model.nodes.length,
+        itemBuilder: (context, index) {
+          final node = model.nodes[index];
+          final treeListTileBuilder = listTileBuilder(context, model, node, model.root?.level ?? 0);
+          // print(node);
+          if (dismissibleTile) {
+            return Dismissible(
+              key: Key('__ModNodeItem__${node.id}__'),
+              onDismissed: (_) => treeListTileBuilder._onRemove(),
+              child: treeListTileBuilder.build(),
+            );
+          } else {
+            return treeListTileBuilder.build();
+          }
+        });
+  }
+
+}
+
+abstract class TreeListTileBuilder<E extends TreeNode> {
+  TreeListTileBuilder(this.context, this.model, this.node, this.rootLevel);
+
+  final BuildContext context;
+  final TreeListModel<E> model;
+  final E node;
+  final int rootLevel;
+
+  double get levelPadding => 24;
+
+  bool get isThreeLine => false;
+
+  bool? get dense => null;
+
+  VisualDensity? get visualDensity => null;
+
+  ShapeBorder? get shape => null;
+
+  bool get enabled => true;
+
+  // GestureLongPressCallback? onLongPress;
+  MouseCursor? get mouseCursor => null;
+
+  bool get selected => false;
+
+  /// The color for the tile's [Material] when it has the input focus.
+  Color? get focusColor => null;
+
+  /// {@macro flutter.material.ListTile.hoverColor}
+  Color? get hoverColor => null;
+
+  /// {@macro flutter.widgets.Focus.focusNode}
+  FocusNode? get focusNode => null;
+
+  /// {@macro flutter.widgets.Focus.autofocus}
+  bool get autofocus => false;
+
+  /// {@macro flutter.material.ListTile.tileColor}
+  Color? get tileColor => null;
+
+  /// {@macro flutter.material.ListTile.selectedTileColor}
+  Color? get selectedTileColor => null;
+
+  bool? get enableFeedback => null;
+
+  double? get horizontalTitleGap => null;
+
+  double? get minVerticalPadding => null;
+
+  double? get minLeadingWidth => null;
+
+  void onRemove() {}
+
+  void onAdd(E newNode) {}
+
+  void onTap() {}
+
+  void _onAdd() {
+    print('onAdd parent=$node');
+    Provider.of<TreeListModel<E>>(context, listen: false).addNode(node).then((newNode) => onAdd(newNode));
+  }
+
+  void _onRemove() {
+    print('onRemove $node');
+    Provider.of<TreeListModel<E>>(context, listen: false).deleteSubTree(node).then((value) => onRemove());
+  }
+
+  /// {@macro flutter.material.ListTile.title}
+  Widget title();
+
+  Widget? subtitle() => null;
+
+  /// {@macro flutter.material.ListTile.leading}
+  Widget leading() {
+    return IconButton(
+      icon: Icon(node.expanded ? Icons.indeterminate_check_box_outlined : Icons.add_box_outlined),
+      onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpandNode(node),
     );
   }
 
-  ListTile buildListTile(node, BuildContext context, int rootLevel) {
-    return ListTile(
-        key: Key('__NodeItem__${node.id}__'),
-        onTap: () => onTapped?.call(node.id),
-        // leading: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
-        //   IconButton(
-        //     icon: Icon(node.expanded ? Icons.arrow_drop_down : Icons.arrow_right),
-        //     onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpandNode(node),
-        //   ),
-        //   Container(padding: EdgeInsets.symmetric(horizontal: (node.level - rootLevel) * 10.0)),
-        //   // Icon(Icons.arrow_right),
-        // ]),
-        leading: IconButton(
-          icon: Icon(node.expanded ? Icons.indeterminate_check_box_outlined : Icons.add_box_outlined),
-          onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpandNode(node),
-        ),
-        title: Text(title(node)),
-        subtitle: subTitle != null ? Text(subTitle?.call(node) ?? '') : null,
-        contentPadding: EdgeInsets.only(left: (node.level - rootLevel) * 12.0),
-      );
+  EdgeInsets contentPadding() => EdgeInsets.only(left: (node.level - rootLevel) * levelPadding);
+
+  Widget? trailing() {
+    return model.editable
+        ? Row(mainAxisAlignment: MainAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: <Widget>[
+      IconButton(icon: const Icon(Icons.add), onPressed: _onAdd),
+      IconButton(icon: const Icon(Icons.delete), onPressed: _onRemove),
+      if (kIsWeb) Padding(padding: EdgeInsets.only(left: 40.0))
+    ])
+        : null;
   }
 
-  ListTile buildEditListTile(BuildContext context, E node, int rootLevel) {
+  Widget build() {
     return ListTile(
-          onTap: () => onTapped?.call(node.id),
-          leading:IconButton(
-            icon: Icon(node.expanded ? Icons.indeterminate_check_box_outlined : Icons.add_box_outlined),
-          onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpandNode(node),
-        ),
-          contentPadding: EdgeInsets.only(left: (node.level - rootLevel) * 12.0),
-          trailing: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, mainAxisSize: MainAxisSize.min, children: <Widget>[
-            IconButton(icon: const Icon(Icons.add), onPressed: () => _onAdd(context, node)),
-            IconButton(icon: const Icon(Icons.delete), onPressed: () => _onRemove(context, node)),
-            if (kIsWeb) Padding(padding: EdgeInsets.only(left: 40.0))
-          ]),
-          // leading: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
-          //   IconButton(
-          //     icon: Icon(node.expanded ? Icons.arrow_drop_down : Icons.arrow_right),
-          //     onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpandNode(node),
-          //   ),
-          //   IconButton(icon: const Icon(Icons.add), onPressed: () => _onAdd(context, node)),
-          //   IconButton(icon: const Icon(Icons.delete), onPressed: () => _onRemove(context, node)),
-          //   Container(padding: EdgeInsets.symmetric(horizontal: (node.level - rootLevel) * 10.0)),
-          //   Icon(Icons.arrow_right),
-          // ]),
-          title: Text(
-            title(node),
-          ),
-          subtitle: subTitle != null ? Text(subTitle?.call(node) ?? '') : null,
-        );
+      key: Key('__TreeNode_${node.id}__'),
+      onTap: onTap,
+      title: title(),
+      subtitle: subtitle(),
+      leading: leading(),
+      trailing: trailing(),
+      contentPadding: contentPadding(),
+      isThreeLine: isThreeLine,
+      dense: dense,
+      visualDensity: visualDensity,
+      shape: shape,
+      enabled: enabled,
+      mouseCursor: mouseCursor,
+      selected: selected,
+      focusColor: focusColor,
+      hoverColor: hoverColor,
+      focusNode: focusNode,
+      autofocus: autofocus,
+      tileColor: tileColor,
+      selectedTileColor: selectedTileColor,
+      enableFeedback: enableFeedback,
+      horizontalTitleGap: horizontalTitleGap,
+      minVerticalPadding: minVerticalPadding,
+      minLeadingWidth: minLeadingWidth,
+    );
   }
 }

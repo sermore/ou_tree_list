@@ -78,7 +78,6 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     print('set root $root');
     _root = root;
     _updateVisibleNodes();
-    notifyListeners();
   }
 
   bool get editable => _editable;
@@ -114,7 +113,7 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
         }
       }
     }
-    print('rebuild visibileNodes start=$start, end=$i, length=${result.length}, root=$root');
+    print('rebuild visibleNodes start=$start, end=$i, length=${result.length}, root=$root');
     return result;
   }
 

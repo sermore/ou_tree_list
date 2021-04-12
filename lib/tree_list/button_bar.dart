@@ -5,9 +5,8 @@ import 'model.dart';
 
 class TreeListButtonBar<E extends TreeNode> extends StatelessWidget {
   final void Function(BuildContext context, E? parent, E node)? onAdd;
-  final String Function(E node) title;
 
-  const TreeListButtonBar({Key? key, required this.title, this.onAdd}) : super(key: key);
+  const TreeListButtonBar({Key? key, this.onAdd}) : super(key: key);
 
   void _onAdd(BuildContext context) {
     final model = Provider.of<TreeListModel<E>>(context, listen: false);

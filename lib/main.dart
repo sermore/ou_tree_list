@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
@@ -6,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'edit_screen.dart';
 import 'list_screen.dart';
 import 'orgunit.dart';
-import 'tree_list/model.dart';
+import 'tree_list/tree_list.dart';
 
 void main() {
   runApp(OuEditorApp());
@@ -33,7 +34,7 @@ class _OuEditorAppState extends State<OuEditorApp> {
           parentId: parent?.id,
           level: level),
       repository: RestRepository<OrgUnit>(
-          uri: 'localhost:8080',
+          uri: '192.168.178.20:8080',
           fromJson: OrgUnit.fromJson,
           onError: (ex, stackTrace) {
             print('error during repository operation $ex');
@@ -49,9 +50,7 @@ class _OuEditorAppState extends State<OuEditorApp> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-        // create: (_) => (HierNodeListModel<OrgUnit>() as OrgUnitListModel)..loadOrgUnits(),
         create: (_) => _model,
-        // SimpleRepository(() => generate(500))),
         child: MaterialApp.router(
           title: 'OrgUnit Editor App',
           routerDelegate: _routerDelegate,
@@ -122,10 +121,8 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
           key: ValueKey('OuListPage'),
           child: OuListScreen(
             onAdd: _onAdd,
-            onRemove: _onRemove,
             onReorder: _onReorder,
-            onTapped: _handleOuTapped,
-            showSnackbar: _showSnackbar,
+            listTileBuilder: (context, model, node, rootLevel) => OuListTileBuilder(context, model, node, rootLevel),
           ),
         ),
         if (show404)
@@ -134,12 +131,10 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
           MaterialPage(
             key: ValueKey(_selectedOu.first),
             child: OuEditScreen(
-              onAdd: _onAdd,
-              onRemove: _onRemove,
+              listTileBuilder: (context, model, node, rootLevel) => OuListTileBuilder(context, model, node, rootLevel),
               onReorder: _onReorder,
+              onSave: _onSave,
               id: _selectedOu.first,
-              onTapped: _handleOuTapped,
-              showSnackbar: _showSnackbar,
             ),
           )
       ],
@@ -196,16 +191,6 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
     _showSnackbar(context, source, msg);
   }
 
-  void _onRemove(context, orgUnit) {
-    print('deleted $orgUnit');
-    _showSnackbar(context, orgUnit, 'Organizational unit ${orgUnit.name} and its children deleted');
-  }
-
-  void _onAdd(context, parent, orgUnit) {
-    print('created $orgUnit as child of $parent');
-    _showSnackbar(context, orgUnit, 'Created new Organizational unit ${orgUnit.name}');
-  }
-
   void _handleOuTapped(String id) {
     print('tapped on $id');
     _selectedOu.addFirst(id);
@@ -213,15 +198,64 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
     notifyListeners();
   }
 
+  void _onRemove(context, node) {
+    print('deleted $node');
+    _showSnackbar(context, node, 'Organizational unit ${node.name} and its children deleted');
+  }
+
+  void _onSave(context, node) {
+    print('updated $node');
+    _showSnackbar(context, node, 'Organizational unit ${node.name} saved');
+  }
+
+  void _onAdd(context, parent, newNode) {
+    print('created $newNode as child of $parent');
+    _showSnackbar(context, newNode, 'Created new Organizational unit ${newNode.name}');
+  }
+
   void _showSnackbar(BuildContext context, OrgUnit orgUnit, String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         key: const Key('OUSnackbar'),
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 4),
         content: Text(msg, maxLines: 1, overflow: TextOverflow.ellipsis),
         action: SnackBarAction(key: Key('__snackbar_action_${orgUnit.id}__'), label: 'Undo', onPressed: () => {}),
       ),
     );
+  }
+
+}
+
+class OuListTileBuilder extends TreeListTileBuilder<OrgUnit> {
+  OuListTileBuilder(BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) : super(context, model, node, rootLevel);
+
+  // double get levelPadding => 30;
+
+  @override
+  Widget title() => Text(node.name);
+
+  @override
+  Widget subtitle() => Text('id = ${node.id}, parentId = ${node.parentId}');
+
+  @override
+  void onAdd(OrgUnit newNode) {
+    Router r = Router.of(context);
+    _OuRouterDelegate routerDelegate = r.routerDelegate as _OuRouterDelegate;
+    routerDelegate._onAdd(context, node, newNode);
+  }
+
+  @override
+  void onRemove() {
+    Router r = Router.of(context);
+    _OuRouterDelegate routerDelegate = r.routerDelegate as _OuRouterDelegate;
+    routerDelegate._onRemove(context, node);
+  }
+
+  @override
+  void onTap() {
+    Router r = Router.of(context);
+    _OuRouterDelegate routerDelegate = r.routerDelegate as _OuRouterDelegate;
+    routerDelegate._handleOuTapped(node.id);
   }
 }
 
