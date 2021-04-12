@@ -2,26 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'orgunit.dart';
-import 'tree_list/button_bar.dart';
-import 'tree_list/list_view.dart';
-import 'tree_list/model.dart';
+import 'tree_list/tree_list.dart';
 
 class OuEditScreen extends StatefulWidget {
-  final String id;
-  final void Function(BuildContext context, OrgUnit node) onRemove;
-  final void Function(BuildContext context, OrgUnit parent, OrgUnit node) onAdd;
-  final void Function(BuildContext context, OrgUnit source, OrgUnit? target, bool result) onReorder;
-  final ValueChanged<String> onTapped;
-  final void Function(BuildContext context, OrgUnit orgUnit, String msg) showSnackbar;
-
   const OuEditScreen({
     required this.id,
-    required this.onRemove,
-    required this.onAdd,
+    required this.listTileBuilder,
     required this.onReorder,
-    required this.onTapped,
-    required this.showSnackbar,
+    required this.onSave,
   }) : super(key: const Key('EditorScreen'));
+
+  final String id;
+  final TreeListTileBuilder<OrgUnit> Function(BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) listTileBuilder;
+  final void Function(BuildContext context, OrgUnit source, OrgUnit? target, bool result) onReorder;
+  final void Function(BuildContext context, OrgUnit node) onSave;
 
   @override
   _OuEditScreenState createState() => _OuEditScreenState();
@@ -50,20 +44,22 @@ class _OuEditScreenState extends State<OuEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Consumer<TreeListModel<OrgUnit>>(builder: (context, model, _) {
-      final OrgUnit? ou = model.findNodeById(widget.id);
-      if (ou == null) {
+      final OrgUnit? nullableNode = model.findNodeById(widget.id);
+      if (nullableNode == null) {
         // avoid rebuild the whole widget in case the root element has been deleted
         return SizedBox();
       }
-      final OrgUnit orgUnit = ou;
+      final OrgUnit rootNode = nullableNode;
+      final listTileBuilder = widget.listTileBuilder(context, model, rootNode, 0);
       return Scaffold(
         appBar: AppBar(
           title: Text('Edit Organizational unit'),
           actions: [
-            IconButton(icon: const Icon(Icons.delete_sweep),
+            IconButton(
+              icon: const Icon(Icons.delete_sweep),
               onPressed: () {
-                Provider.of<TreeListModel<OrgUnit>>(context, listen: false).deleteNode(orgUnit).then((res) {
-                  widget.onRemove(context, orgUnit);
+                Provider.of<TreeListModel<OrgUnit>>(context, listen: false).deleteSubTree(rootNode).then((res) {
+                  listTileBuilder.onRemove();
                   Navigator.pop(context);
                 });
               },
@@ -80,7 +76,7 @@ class _OuEditScreenState extends State<OuEditScreen> {
                     key: _formKey,
                     child: Padding(
                         padding: EdgeInsets.all(8.0),
-                        child: Column( children: [
+                        child: Column(children: [
                           Padding(
                             padding: EdgeInsets.all(8.0),
                             child: Align(
@@ -94,9 +90,10 @@ class _OuEditScreenState extends State<OuEditScreen> {
                                 padding: EdgeInsets.symmetric(horizontal: 8.0),
                                 child: Text('Parent', style: Theme.of(context).textTheme.button),
                               ),
-                              Expanded(child: Text(orgUnit.parentId == null
-                                  ? 'Root Element'
-                                  : model.findNodeById(orgUnit.parentId!)!.name)),
+                              Expanded(
+                                  child: Text(rootNode.parentId == null
+                                      ? 'Root Element'
+                                      : model.findNodeById(rootNode.parentId!)!.name)),
                             ],
                           ),
                           Row(
@@ -105,7 +102,7 @@ class _OuEditScreenState extends State<OuEditScreen> {
                               Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 8.0),
                                   child: Text('Level', style: Theme.of(context).textTheme.button)),
-                              Text(orgUnit.level.toString()),
+                              Text(rootNode.level.toString()),
                             ],
                           ),
                           Row(
@@ -138,71 +135,29 @@ class _OuEditScreenState extends State<OuEditScreen> {
                               ),
                               Switch(
                                 value: _active,
-                                onChanged: (value) {
-                                  setState(() {
+                                onChanged: (value) => setState(() {
                                     _active = value;
-                                  });
-                                },
+                                  }),
                               )
                             ],
                           ),
                         ])),
                   ),
-                  // ButtonBar(
-                  //   children: [
-                  //     ElevatedButton.icon(
-                  //       icon: const Icon(Icons.save_rounded),
-                  //       label: Text('Save'),
-                  //       onPressed: () {
-                  //         if (_formKey.currentState!.validate()) {
-                  //           _formKey.currentState!.save();
-                  //           OrgUnit modifiedOu = orgUnit.copy(name: _nameController.text, active: _active);
-                  //           Provider.of<TreeListModel<OrgUnit>>(context, listen: false).updateNode(modifiedOu);
-                  //           widget.showSnackbar(context, modifiedOu, 'Organizational unit ${modifiedOu.name} saved');
-                  //         }
-                  //       },
-                  //     ),
-                  //     ElevatedButton.icon(
-                  //       icon: const Icon(Icons.delete),
-                  //       label: Text(MaterialLocalizations.of(context).deleteButtonTooltip),
-                  //       onPressed: () {
-                  //         print('deleted $orgUnit');
-                  //         Provider.of<TreeListModel<OrgUnit>>(context, listen: false).deleteNode(orgUnit);
-                  //         widget.showSnackbar(
-                  //             context, orgUnit, 'Organizational unit ${orgUnit.name} and its children deleted');
-                  //         return Navigator.pop(context);
-                  //       },
-                  //     ),
-                  //   ],
-                  // )
                 ],
               ),
             ),
             if (MediaQuery.of(context).size.height > 400)
-            Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text('Children sub-tree', style: Theme.of(context).textTheme.headline6))),
+              TreeListButtonBar<OrgUnit>(
+                key: const Key('OUButtonBar'),
+                onAdd: (context, parent, newNode) => listTileBuilder.onAdd(newNode),
+              ),
+            if (MediaQuery.of(context).size.height > 400) Divider(),
             if (MediaQuery.of(context).size.height > 400)
-            Padding(
-                padding: EdgeInsets.all(8.0),
-                child: TreeListButtonBar<OrgUnit>(
-                    key: const Key('OUButtonBar'),
-                    title: (ou) => ou.name,
-                    onAdd: (context, parent, node) => widget.onAdd(context, parent!, node),
-                )),
-            if (MediaQuery.of(context).size.height > 400)
-            Expanded(
-                child: Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: TreeListView<OrgUnit>(
-                        title: (ou) => ou.name,
-                        onAdd: widget.onAdd,
-                        onRemove: widget.onRemove,
-                        onReorder: widget.onReorder,
-                        onTapped: widget.onTapped,
-)))
+              Expanded(
+                  child: TreeListView<OrgUnit>(
+                      // subtitle: (context, model, ou, rootLevel) => Text('description ${ou.name}'),
+                      onReorder: widget.onReorder,
+                      listTileBuilder: widget.listTileBuilder))
           ],
         ),
         floatingActionButton: FloatingActionButton(
@@ -211,9 +166,9 @@ class _OuEditScreenState extends State<OuEditScreen> {
           onPressed: () {
             if (_formKey.currentState!.validate()) {
               _formKey.currentState!.save();
-              OrgUnit modifiedOu = orgUnit.copy(name: _nameController.text, active: _active);
+              OrgUnit modifiedOu = rootNode.copy(name: _nameController.text, active: _active);
               Provider.of<TreeListModel<OrgUnit>>(context, listen: false).updateNode(modifiedOu).then((node) {
-                widget.showSnackbar(context, modifiedOu, 'Organizational unit ${modifiedOu.name} saved');
+                widget.onSave(context, node);
                 Navigator.pop(context);
               });
             }
