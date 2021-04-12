@@ -5,9 +5,8 @@ import 'model.dart';
 
 class TreeListButtonBar<E extends TreeNode> extends StatelessWidget {
   final void Function(BuildContext context, E? parent, E node)? onAdd;
-  final String Function(E node) title;
 
-  const TreeListButtonBar({Key? key, required this.title, this.onAdd}) : super(key: key);
+  const TreeListButtonBar({Key? key, this.onAdd}) : super(key: key);
 
   void _onAdd(BuildContext context) {
     final model = Provider.of<TreeListModel<E>>(context, listen: false);
@@ -20,12 +19,18 @@ class TreeListButtonBar<E extends TreeNode> extends StatelessWidget {
     final int totalLength = model.totalLength;
     final int subTreeLength = model.root != null ? model.subTreeLength(model.root!) : -1;
     return ButtonBar(
+      key: const Key('__TreeListButtonBar__'),
       alignment: MainAxisAlignment.start,
       children: [
         IconButton(
             icon: const Icon(Icons.account_tree),
             tooltip: 'Toggle tree expansion',
             onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpansion()
+        ),
+        IconButton(
+            onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).load(),
+            icon: const Icon(Icons.autorenew, semanticLabel: "Reload",),
+            tooltip: "Reload",
         ),
         if (model.editable)
           IconButton(
@@ -41,7 +46,7 @@ class TreeListButtonBar<E extends TreeNode> extends StatelessWidget {
                 model.editable = value;
               },
             )),
-        Text(subTreeLength > -1 ? 'Sub-tree length $subTreeLength (Total $totalLength)' : 'Total length $totalLength')
+        Text(subTreeLength > -1 ? 'Length $subTreeLength ($totalLength)' : 'Length $totalLength')
       ],
     );
   }

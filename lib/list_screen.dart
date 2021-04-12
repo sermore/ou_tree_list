@@ -1,25 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:ou_tree_list/tree_list/model.dart';
 
 import 'orgunit.dart';
-import 'tree_list/button_bar.dart';
-import 'tree_list/list_view.dart';
-import 'tree_list/model.dart';
+import 'tree_list/tree_list.dart';
 
 class OuListScreen extends StatelessWidget {
-  final void Function(BuildContext context, OrgUnit node) onRemove;
-  final void Function(BuildContext context, OrgUnit? parent, OrgUnit node) onAdd;
-  final void Function(BuildContext context, OrgUnit source, OrgUnit? target, bool result) onReorder;
-  final ValueChanged<String> onTapped;
-  final void Function(BuildContext context, OrgUnit orgUnit, String msg)
-      showSnackbar;
-
   OuListScreen({
-    required this.onRemove,
-    required this.onAdd,
+    required this.listTileBuilder,
     required this.onReorder,
-    required this.onTapped,
-    required this.showSnackbar});
+    required this.onAdd,
+  });
+
+  final TreeListTileBuilder<OrgUnit> Function(
+      BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) listTileBuilder;
+  final void Function(BuildContext context, OrgUnit? parent, OrgUnit newNode) onAdd;
+  final void Function(BuildContext context, OrgUnit source, OrgUnit? target, bool result) onReorder;
 
   @override
   Widget build(BuildContext context) {
@@ -32,33 +27,17 @@ class OuListScreen extends StatelessWidget {
           ),
           title: Text('Organizational units Editor'),
         ),
-        body: Selector<TreeListModel<OrgUnit>, bool>(
-            selector: (context, model) => model.isLoading,
-            builder: (context, isLoading, _) {
-              if (isLoading) {
-                return Center(
-                  child: CircularProgressIndicator(
-                    key: const Key('OULoading'),
-                  ),
-                );
-              }
-              return Column(
-                children: [
-                  TreeListButtonBar<OrgUnit>(
-                    title: (ou) => ou.name,
-                    onAdd: onAdd
-                  ),
-                  const Divider(),
-                  Expanded(
-                      child: TreeListView<OrgUnit>(
-                        title: (ou) => ou.name,
-                        onTapped: onTapped,
-                        onAdd: onAdd,
-                        onRemove: onRemove,
-                        onReorder: onReorder,
-                  ))
-                ],
-              );
-            }));
+        body: Column(
+          children: [
+            TreeListButtonBar<OrgUnit>(
+                onAdd: (BuildContext context, OrgUnit? parent, OrgUnit newNode) => onAdd(context, parent, newNode)),
+            const Divider(),
+            Expanded(
+                child: TreeListView<OrgUnit>(
+              onReorder: onReorder,
+              listTileBuilder: listTileBuilder,
+            ))
+          ],
+        ));
   }
 }
