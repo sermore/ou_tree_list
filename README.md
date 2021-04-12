@@ -22,3 +22,4 @@ TODO
 https://github.com/brianegan/flutter_architecture_samples/tree/master/change_notifier_provider
 https://medium.com/flutter/learning-flutters-new-navigation-and-routing-system-7c9068155ade
 
+https://github.com/dart-lang/intl_translation/issues/123

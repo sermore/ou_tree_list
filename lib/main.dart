@@ -1,10 +1,12 @@
 import 'dart:collection';
 
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'edit_screen.dart';
 import 'list_screen.dart';
+import 'localization.dart';
 import 'orgunit.dart';
 import 'tree_list/model.dart';
 
@@ -48,7 +50,18 @@ class _OuEditorAppState extends State<OuEditorApp> {
         create: (_) => _model,
         // SimpleRepository(() => generate(500))),
         child: MaterialApp.router(
-          title: 'OrgUnit Editor App',
+          localizationsDelegates: [
+            OuEditorAppLocalizationsDelegate(),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: [
+            const Locale('en', ''), // English, no country code
+            const Locale('it', ''), // Italian, no country code
+          ],
+
+          title: OuEditorAppLocalizations.of(context)!.title,
           routerDelegate: _routerDelegate,
           routeInformationParser: _routeInformationParser,
         ));
