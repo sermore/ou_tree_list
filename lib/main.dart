@@ -25,35 +25,32 @@ class _OuEditorAppState extends State<OuEditorApp> {
   _OuRouterDelegate _routerDelegate = _OuRouterDelegate();
   _OuRouteInformationParser _routeInformationParser = _OuRouteInformationParser();
 
-  late TreeListModel<OrgUnit> _model;
+  // TreeListModel<OrgUnit> _model;
 
   @override
   void initState() {
     super.initState();
-    print("initialization");
-    _model = TreeListModel<OrgUnit>(
-      createNode: ({OrgUnit? parent, int level = 0}) => OrgUnit(
-          name: parent == null ? 'A new root item' : 'A new child of ${parent.name}',
-          parentId: parent?.id,
-          level: level),
-      repository: RestRepository<OrgUnit>(
-          uri: '192.168.178.20:8080',
-          fromJson: OrgUnit.fromJson,
-          onError: (ex, stackTrace) {
-            print('error during repository operation $ex');
-            throw ex;
-          }),
-      // NoOpRepository<OrgUnit>(() => Future.delayed(Duration(seconds: 2), () => generate(100))),
-      //   forceReload: true,
-    );
-    print('initial loading');
-    _model.load();
+    final model = Provider.of<TreeListModel<OrgUnit>>(context, listen: false);
   }
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-        create: (_) => _model,
+        create: (context) => TreeListModel<OrgUnit>(
+          // createNode: ({OrgUnit? parent, int level = 0}) => OrgUnit(
+          //     name: parent == null ? AppLocalis.of(context)!.newRootItem : AppLocalizations.of(context)!.newChildItem(parent.name),
+          //     parentId: parent?.id,
+          //     level: level),
+          repository: RestRepository<OrgUnit>(
+              uri: 'localhost:8080',
+              fromJson: OrgUnit.fromJson,
+              onError: (ex, stackTrace) {
+                print('error during repository operation $ex');
+                throw ex;
+              }),
+          // NoOpRepository<OrgUnit>(() => Future.delayed(Duration(seconds: 2), () => generate(100))),
+          //   forceReload: true,
+        )..load(),
         child: MaterialApp.router(
           localizationsDelegates: [
             AppLocalizations.delegate,
@@ -128,6 +125,10 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
   @override
   Widget build(BuildContext context) {
     _model = Provider.of<TreeListModel<OrgUnit>>(context, listen: true);
+    _model.createNode = ({OrgUnit? parent, int level = 0}) => OrgUnit(
+        name: parent == null ? AppLocalizations.of(context)!.newRootItem : AppLocalizations.of(context)!.newChildItem(parent.name),
+        parentId: parent?.id,
+        level: level);
     return Navigator(
       key: navigatorKey,
       pages: [

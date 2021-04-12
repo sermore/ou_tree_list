@@ -37,7 +37,7 @@ mixin TreeNode {
 
 class TreeListModel<E extends TreeNode> extends ChangeNotifier {
 
-  final E Function({E parent, int level}) createNode;
+  late E Function({E parent, int level}) createNode;
   final Repository<E> repository;
   List<E> _nodes;
   List<E> _visibleNodes;
@@ -46,7 +46,7 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
   bool _editable;
   bool _forceReload;
 
-  TreeListModel({required this.createNode, required this.repository, bool forceReload = false})
+  TreeListModel({required this.repository, bool forceReload = false})
       : _isLoading = true,
         _editable = false,
         _forceReload = forceReload,
