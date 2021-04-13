@@ -84,6 +84,54 @@ class TreeListView<E extends TreeNode> extends StatelessWidget {
 
 }
 
+class TreeListButtonBar<E extends TreeNode> extends StatelessWidget {
+
+  const TreeListButtonBar({Key? key, required this.treeListTileCfg}) : super(key: key);
+
+  final TreeListTileCfg treeListTileCfg;
+
+  @override
+  Widget build(BuildContext context) {
+    final model = Provider.of<TreeListModel<E>>(context, listen: true);
+    final int totalLength = model.totalLength;
+    final int subTreeLength = model.root != null ? model.subTreeLength(model.root!) : -1;
+    return ButtonBar(
+      key: const Key('__TreeListButtonBar__'),
+      alignment: MainAxisAlignment.start,
+      children: [
+        IconButton(
+            icon: const Icon(Icons.account_tree),
+            tooltip: 'Toggle tree expansion',
+            onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpansion()
+        ),
+        IconButton(
+          onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).load(),
+          icon: const Icon(Icons.autorenew, semanticLabel: "Reload",),
+          tooltip: "Reload",
+        ),
+        if (model.editable)
+          IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: 'Add a root item',
+              onPressed: () {
+                final model = Provider.of<TreeListModel<E>>(context, listen: false);
+                treeListTileCfg._onAdd(context, model, model.root, model.root?.level ?? 0);
+              }
+          ),
+        Tooltip(
+            message: 'Enable Editable mode',
+            child: Switch(
+              value: model.editable,
+              onChanged: (value) {
+                model.editable = value;
+              },
+            )),
+        Text(subTreeLength > -1 ? 'Length $subTreeLength ($totalLength)' : 'Length $totalLength')
+      ],
+    );
+  }
+}
+
 class TreeListTileCfg<E extends TreeNode> {
 
   TreeListTileCfg({
@@ -116,7 +164,7 @@ class TreeListTileCfg<E extends TreeNode> {
       this.trailing,
   });
 
-  final E Function({required BuildContext context, E? parent, int level}) createNode;
+  final E Function({required BuildContext context, E? parent}) createNode;
 
   final double Function(BuildContext context, TreeListModel<E> model, E node, int rootLevel)? levelPadding;
 
@@ -179,14 +227,17 @@ class TreeListTileCfg<E extends TreeNode> {
 
   final Widget? Function(BuildContext context, TreeListModel<E> model, E node, int rootLevel)? trailing;
 
-  void _onAdd(BuildContext context, TreeListModel<E> model, E? node, int rootLevel) {
-    print('onAdd parent=$node');
-    Provider.of<TreeListModel<E>>(context, listen: false).addNode(node).then((newNode) => onAdd?.call(context, model, node, rootLevel, newNode));
+  void _onAdd(BuildContext context, TreeListModel<E> model, E? parent, int rootLevel) {
+    print('onAdd parent=$parent');
+    E node = createNode(context: context, parent: parent);
+    // Provider.of<TreeListModel<E>>(context, listen: false).addNode(node).then((newNode) => onAdd?.call(context, model, node, rootLevel, newNode));
+    model.addNode(parent, node).then((newNode) => onAdd?.call(context, model, parent, rootLevel, newNode));
   }
 
   void _onRemove(BuildContext context, TreeListModel<E> model, E node, int rootLevel) {
     print('onRemove $node');
-    Provider.of<TreeListModel<E>>(context, listen: false).deleteSubTree(node).then((value) => onRemove?.call(context, model, node, rootLevel));
+    // Provider.of<TreeListModel<E>>(context, listen: false).deleteSubTree(node).then((value) => onRemove?.call(context, model, node, rootLevel));
+    model.deleteSubTree(node).then((value) => onRemove?.call(context, model, node, rootLevel));
   }
 
   double buildLevelPadding(BuildContext context, TreeListModel<E> model, E node, int rootLevel) => 24;
@@ -203,7 +254,7 @@ class TreeListTileCfg<E extends TreeNode> {
         ? Row(mainAxisAlignment: MainAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: <Widget>[
       IconButton(icon: const Icon(Icons.add), onPressed: () => _onAdd(context, model, node, rootLevel)),
       IconButton(icon: const Icon(Icons.delete), onPressed: () => _onRemove(context, model, node, rootLevel)),
-      if (kIsWeb) Padding(padding: EdgeInsets.only(left: 40.0))
+      // if (kIsWeb) Padding(padding: EdgeInsets.only(left: 40.0))
     ])
         : null;
   }

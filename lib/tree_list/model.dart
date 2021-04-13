@@ -176,8 +176,7 @@ class TreeListModel<E extends TreeNode> extends ChangeNotifier {
     });
   }
 
-  Future<E> addNode(E? parent) {
-    E newNode = parent == null ? createNode() : createNode(parent: parent, level: parent.level + 1);
+  Future<E> addNode(E? parent, E newNode) {
     print('add node $newNode');
     return repository.add(newNode).then((node) {
       print('new node $node');

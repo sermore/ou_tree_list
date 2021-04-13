@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ou_tree_list/main.dart';
 import 'package:provider/provider.dart';
 
 import 'orgunit.dart';
@@ -15,7 +14,9 @@ class OuEditScreen extends StatefulWidget {
 
   final String id;
   final TreeListTileCfg<OrgUnit> treeListTileCfg;
-  final void Function(BuildContext context, OrgUnit source, OrgUnit? target, bool result) onReorder;
+  final void Function(
+          BuildContext context, OrgUnit source, OrgUnit? target, bool result)
+      onReorder;
   final void Function(BuildContext context, OrgUnit node) onSave;
 
   @override
@@ -30,7 +31,8 @@ class _OuEditScreenState extends State<OuEditScreen> {
   @override
   void initState() {
     print('init state edit');
-    OrgUnit ou = Provider.of<TreeListModel<OrgUnit>>(context, listen: false).findNodeById(widget.id)!;
+    OrgUnit ou = Provider.of<TreeListModel<OrgUnit>>(context, listen: false)
+        .findNodeById(widget.id)!;
     _nameController = TextEditingController(text: ou.name);
     _active = ou.active;
     super.initState();
@@ -58,8 +60,11 @@ class _OuEditScreenState extends State<OuEditScreen> {
             IconButton(
               icon: const Icon(Icons.delete_sweep),
               onPressed: () {
-                Provider.of<TreeListModel<OrgUnit>>(context, listen: false).deleteSubTree(rootNode).then((res) {
-                  widget.treeListTileCfg.onRemove?.call(context, model, rootNode, 0);
+                Provider.of<TreeListModel<OrgUnit>>(context, listen: false)
+                    .deleteSubTree(rootNode)
+                    .then((res) {
+                  widget.treeListTileCfg.onRemove
+                      ?.call(context, model, rootNode, 0);
                   Navigator.pop(context);
                 });
               },
@@ -81,27 +86,35 @@ class _OuEditScreenState extends State<OuEditScreen> {
                             padding: EdgeInsets.all(8.0),
                             child: Align(
                                 alignment: Alignment.centerLeft,
-                                child: Text('Edit properties', style: Theme.of(context).textTheme.headline6)),
+                                child: Text('Edit properties',
+                                    style:
+                                        Theme.of(context).textTheme.headline6)),
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Text('Parent', style: Theme.of(context).textTheme.button),
+                                child: Text('Parent',
+                                    style: Theme.of(context).textTheme.button),
                               ),
                               Expanded(
                                   child: Text(rootNode.parentId == null
                                       ? 'Root Element'
-                                      : model.findNodeById(rootNode.parentId!)!.name)),
+                                      : model
+                                          .findNodeById(rootNode.parentId!)!
+                                          .name)),
                             ],
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 8.0),
-                                  child: Text('Level', style: Theme.of(context).textTheme.button)),
+                                  padding:
+                                      EdgeInsets.symmetric(horizontal: 8.0),
+                                  child: Text('Level',
+                                      style:
+                                          Theme.of(context).textTheme.button)),
                               Text(rootNode.level.toString()),
                             ],
                           ),
@@ -110,7 +123,8 @@ class _OuEditScreenState extends State<OuEditScreen> {
                             children: [
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Text('Name', style: Theme.of(context).textTheme.button),
+                                child: Text('Name',
+                                    style: Theme.of(context).textTheme.button),
                               ),
                               Expanded(
                                 child: TextFormField(
@@ -120,7 +134,9 @@ class _OuEditScreenState extends State<OuEditScreen> {
                                     hintText: "Organizational unit's name",
                                   ),
                                   validator: (val) {
-                                    return val!.trim().isEmpty ? 'Please enter some text' : null;
+                                    return val!.trim().isEmpty
+                                        ? 'Please enter some text'
+                                        : null;
                                   },
                                 ),
                               )
@@ -131,13 +147,14 @@ class _OuEditScreenState extends State<OuEditScreen> {
                             children: [
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Text('Active', style: Theme.of(context).textTheme.button),
+                                child: Text('Active',
+                                    style: Theme.of(context).textTheme.button),
                               ),
                               Switch(
                                 value: _active,
                                 onChanged: (value) => setState(() {
-                                    _active = value;
-                                  }),
+                                  _active = value;
+                                }),
                               )
                             ],
                           ),
@@ -149,16 +166,15 @@ class _OuEditScreenState extends State<OuEditScreen> {
             if (MediaQuery.of(context).size.height > 400)
               TreeListButtonBar<OrgUnit>(
                 key: const Key('OUButtonBar'),
-                onAdd: (context, parent, newNode) => widget.treeListTileCfg.onAdd?.call(context, model, parent, model.root?.level ?? 0, newNode),
+                treeListTileCfg: widget.treeListTileCfg,
               ),
             if (MediaQuery.of(context).size.height > 400) Divider(),
             if (MediaQuery.of(context).size.height > 400)
               Expanded(
                   child: TreeListView<OrgUnit>(
-                    treeListTileCfg: widget.treeListTileCfg,
-                      // subtitle: (context, model, ou, rootLevel) => Text('description ${ou.name}'),
-                      onReorder: widget.onReorder,
-                      ))
+                treeListTileCfg: widget.treeListTileCfg,
+                onReorder: widget.onReorder,
+              ))
           ],
         ),
         floatingActionButton: FloatingActionButton(
@@ -167,8 +183,11 @@ class _OuEditScreenState extends State<OuEditScreen> {
           onPressed: () {
             if (_formKey.currentState!.validate()) {
               _formKey.currentState!.save();
-              OrgUnit modifiedOu = rootNode.copy(name: _nameController.text, active: _active);
-              Provider.of<TreeListModel<OrgUnit>>(context, listen: false).updateNode(modifiedOu).then((node) {
+              OrgUnit modNode =
+                  rootNode.copy(name: _nameController.text, active: _active);
+              Provider.of<TreeListModel<OrgUnit>>(context, listen: false)
+                  .updateNode(modNode)
+                  .then((node) {
                 widget.onSave(context, node);
                 Navigator.pop(context);
               });

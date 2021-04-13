@@ -129,11 +129,11 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
         parentId: parent?.id,
         level: level);
     final treeListTileCfg = TreeListTileCfg(
-        createNode: ({required BuildContext context, OrgUnit? parent, int level = 0}) => OrgUnit(
+        createNode: ({required BuildContext context, OrgUnit? parent}) => OrgUnit(
             name: parent == null ? AppLocalizations.of(context)!.newRootItem : AppLocalizations.of(context)!.newChildItem(parent.name),
             parentId: parent?.id,
-            level: level),
-        levelPadding: (BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) => 30,
+            level: parent != null ? parent.level + 1 : 0),
+        // levelPadding: (BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) => 30,
         title: (BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) => Text(node.name),
         subtitle: (BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) => Text('id = ${node.id}, parentId = ${node.parentId}'),
         onAdd: (BuildContext context, TreeListModel<OrgUnit> model, OrgUnit? node, int rootLevel, OrgUnit newNode) {
@@ -158,7 +158,6 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
         MaterialPage(
           key: ValueKey('OuListPage'),
           child: OuListScreen(
-            onAdd: _onAdd,
             onReorder: _onReorder,
             treeListTileCfg: treeListTileCfg,
           ),
