@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ou_tree_list/main.dart';
 import 'package:provider/provider.dart';
 
 import 'orgunit.dart';
@@ -7,13 +8,13 @@ import 'tree_list/tree_list.dart';
 class OuEditScreen extends StatefulWidget {
   const OuEditScreen({
     required this.id,
-    required this.listTileBuilder,
+    required this.treeListTileCfg,
     required this.onReorder,
     required this.onSave,
   }) : super(key: const Key('EditorScreen'));
 
   final String id;
-  final TreeListTileBuilder<OrgUnit> Function(BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) listTileBuilder;
+  final TreeListTileCfg<OrgUnit> treeListTileCfg;
   final void Function(BuildContext context, OrgUnit source, OrgUnit? target, bool result) onReorder;
   final void Function(BuildContext context, OrgUnit node) onSave;
 
@@ -50,7 +51,6 @@ class _OuEditScreenState extends State<OuEditScreen> {
         return SizedBox();
       }
       final OrgUnit rootNode = nullableNode;
-      final listTileBuilder = widget.listTileBuilder(context, model, rootNode, 0);
       return Scaffold(
         appBar: AppBar(
           title: Text('Edit Organizational unit'),
@@ -59,7 +59,7 @@ class _OuEditScreenState extends State<OuEditScreen> {
               icon: const Icon(Icons.delete_sweep),
               onPressed: () {
                 Provider.of<TreeListModel<OrgUnit>>(context, listen: false).deleteSubTree(rootNode).then((res) {
-                  listTileBuilder.onRemove();
+                  widget.treeListTileCfg.onRemove?.call(context, model, rootNode, 0);
                   Navigator.pop(context);
                 });
               },
@@ -149,15 +149,16 @@ class _OuEditScreenState extends State<OuEditScreen> {
             if (MediaQuery.of(context).size.height > 400)
               TreeListButtonBar<OrgUnit>(
                 key: const Key('OUButtonBar'),
-                onAdd: (context, parent, newNode) => listTileBuilder.onAdd(newNode),
+                onAdd: (context, parent, newNode) => widget.treeListTileCfg.onAdd?.call(context, model, parent, model.root?.level ?? 0, newNode),
               ),
             if (MediaQuery.of(context).size.height > 400) Divider(),
             if (MediaQuery.of(context).size.height > 400)
               Expanded(
                   child: TreeListView<OrgUnit>(
+                    treeListTileCfg: widget.treeListTileCfg,
                       // subtitle: (context, model, ou, rootLevel) => Text('description ${ou.name}'),
                       onReorder: widget.onReorder,
-                      listTileBuilder: widget.listTileBuilder))
+                      ))
           ],
         ),
         floatingActionButton: FloatingActionButton(

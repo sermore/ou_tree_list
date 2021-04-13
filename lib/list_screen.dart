@@ -6,13 +6,12 @@ import 'tree_list/tree_list.dart';
 
 class OuListScreen extends StatelessWidget {
   OuListScreen({
-    required this.listTileBuilder,
     required this.onReorder,
     required this.onAdd,
+    required this.treeListTileCfg,
   });
 
-  final TreeListTileBuilder<OrgUnit> Function(
-      BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) listTileBuilder;
+  final TreeListTileCfg<OrgUnit> treeListTileCfg;
   final void Function(BuildContext context, OrgUnit? parent, OrgUnit newNode) onAdd;
   final void Function(BuildContext context, OrgUnit source, OrgUnit? target, bool result) onReorder;
 
@@ -35,7 +34,7 @@ class OuListScreen extends StatelessWidget {
             Expanded(
                 child: TreeListView<OrgUnit>(
               onReorder: onReorder,
-              listTileBuilder: listTileBuilder,
+                  treeListTileCfg: treeListTileCfg,
             ))
           ],
         ));

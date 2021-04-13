@@ -30,7 +30,6 @@ class _OuEditorAppState extends State<OuEditorApp> {
   @override
   void initState() {
     super.initState();
-    final model = Provider.of<TreeListModel<OrgUnit>>(context, listen: false);
   }
 
   @override
@@ -129,6 +128,30 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
         name: parent == null ? AppLocalizations.of(context)!.newRootItem : AppLocalizations.of(context)!.newChildItem(parent.name),
         parentId: parent?.id,
         level: level);
+    final treeListTileCfg = TreeListTileCfg(
+        createNode: ({required BuildContext context, OrgUnit? parent, int level = 0}) => OrgUnit(
+            name: parent == null ? AppLocalizations.of(context)!.newRootItem : AppLocalizations.of(context)!.newChildItem(parent.name),
+            parentId: parent?.id,
+            level: level),
+        levelPadding: (BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) => 30,
+        title: (BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) => Text(node.name),
+        subtitle: (BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) => Text('id = ${node.id}, parentId = ${node.parentId}'),
+        onAdd: (BuildContext context, TreeListModel<OrgUnit> model, OrgUnit? node, int rootLevel, OrgUnit newNode) {
+          Router r = Router.of(context);
+          _OuRouterDelegate routerDelegate = r.routerDelegate as _OuRouterDelegate;
+          routerDelegate._onAdd(context, node, newNode);
+        },
+        onRemove: (BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) {
+          Router r = Router.of(context);
+          _OuRouterDelegate routerDelegate = r.routerDelegate as _OuRouterDelegate;
+          routerDelegate._onRemove(context, node);
+        },
+        onTap: (BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) {
+          Router r = Router.of(context);
+          _OuRouterDelegate routerDelegate = r.routerDelegate as _OuRouterDelegate;
+          routerDelegate._handleOuTapped(node.id);
+        }
+    );
     return Navigator(
       key: navigatorKey,
       pages: [
@@ -137,7 +160,7 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
           child: OuListScreen(
             onAdd: _onAdd,
             onReorder: _onReorder,
-            listTileBuilder: (context, model, node, rootLevel) => OuListTileBuilder(context, model, node, rootLevel),
+            treeListTileCfg: treeListTileCfg,
           ),
         ),
         if (show404)
@@ -146,7 +169,7 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
           MaterialPage(
             key: ValueKey(_selectedOu.first),
             child: OuEditScreen(
-              listTileBuilder: (context, model, node, rootLevel) => OuListTileBuilder(context, model, node, rootLevel),
+              treeListTileCfg: treeListTileCfg,
               onReorder: _onReorder,
               onSave: _onSave,
               id: _selectedOu.first,
