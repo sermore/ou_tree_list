@@ -264,39 +264,6 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
 
 }
 
-class OuListTileBuilder extends TreeListTileBuilder<OrgUnit> {
-  OuListTileBuilder(BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) : super(context, model, node, rootLevel);
-
-  // double get levelPadding => 30;
-
-  @override
-  Widget title() => Text(node.name);
-
-  @override
-  Widget subtitle() => Text('id = ${node.id}, parentId = ${node.parentId}');
-
-  @override
-  void onAdd(OrgUnit newNode) {
-    Router r = Router.of(context);
-    _OuRouterDelegate routerDelegate = r.routerDelegate as _OuRouterDelegate;
-    routerDelegate._onAdd(context, node, newNode);
-  }
-
-  @override
-  void onRemove() {
-    Router r = Router.of(context);
-    _OuRouterDelegate routerDelegate = r.routerDelegate as _OuRouterDelegate;
-    routerDelegate._onRemove(context, node);
-  }
-
-  @override
-  void onTap() {
-    Router r = Router.of(context);
-    _OuRouterDelegate routerDelegate = r.routerDelegate as _OuRouterDelegate;
-    routerDelegate._handleOuTapped(node.id);
-  }
-}
-
 class _OuRoutePath {
   final String? id;
   final bool isUnknown;
