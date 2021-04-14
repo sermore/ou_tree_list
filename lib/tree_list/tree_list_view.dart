@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:ou_tree_list/orgunit.dart';
 import 'package:provider/provider.dart';
 
 import 'model.dart';
+
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class TreeListView<E extends TreeNode> extends StatelessWidget {
 
@@ -101,32 +102,32 @@ class TreeListButtonBar<E extends TreeNode> extends StatelessWidget {
       children: [
         IconButton(
             icon: const Icon(Icons.account_tree),
-            tooltip: 'Toggle tree expansion',
+            tooltip: AppLocalizations.of(context)!.tlToggleTooltip,
             onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).toggleExpansion()
         ),
         IconButton(
           onPressed: () => Provider.of<TreeListModel<E>>(context, listen: false).load(),
-          icon: const Icon(Icons.autorenew, semanticLabel: "Reload",),
-          tooltip: "Reload",
+          icon: Icon(Icons.autorenew, semanticLabel: AppLocalizations.of(context)!.tlReload),
+          tooltip: AppLocalizations.of(context)!.tlReload,
         ),
         if (model.editable)
           IconButton(
               icon: const Icon(Icons.add),
-              tooltip: 'Add a root item',
+              tooltip: AppLocalizations.of(context)!.tlAddTooltip,
               onPressed: () {
                 final model = Provider.of<TreeListModel<E>>(context, listen: false);
                 treeListTileCfg._onAdd(context, model, model.root, model.root?.level ?? 0);
               }
           ),
         Tooltip(
-            message: 'Enable Editable mode',
+            message: AppLocalizations.of(context)!.tlSwitchTooltip,
             child: Switch(
               value: model.editable,
               onChanged: (value) {
                 model.editable = value;
               },
             )),
-        Text(subTreeLength > -1 ? 'Length $subTreeLength ($totalLength)' : 'Length $totalLength')
+        Text(subTreeLength > -1 ? '${AppLocalizations.of(context)!.tlLength} $subTreeLength ($totalLength)' : '${AppLocalizations.of(context)!.tlLength} $totalLength')
       ],
     );
   }

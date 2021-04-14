@@ -7,10 +7,10 @@ import 'package:ou_tree_list/tree_list/model.dart';
 void main() {
   test('Model behaves correctly', () async {
     final TreeListModel model = TreeListModel<OrgUnit>(
-      createNode: ({OrgUnit? parent, int level = 0}) => OrgUnit(
-          name: parent == null ? 'A new root item' : 'A new child of ${parent.name}',
-          parentId: parent?.id,
-          level: level),
+      // createNode: ({OrgUnit? parent, int level = 0}) => OrgUnit(
+      //     name: parent == null ? 'A new root item' : 'A new child of ${parent.name}',
+      //     parentId: parent?.id,
+      //     level: level),
       // repository: RestRepository<OrgUnit>(
       //     uri: 'localhost:8080',
       //     fromJson: OrgUnit.fromJson,
@@ -22,7 +22,8 @@ void main() {
     );
 
     expect(await model.load(), hasLength(100));
-    expect(await model.addNode(null), predicate<TreeNode>((node) => node.parentId == null));
+    final n = OrgUnit(name: 'o1');
+    expect(await model.addNode(null, n), predicate<TreeNode>((node) => node.parentId == null));
     expect(model.totalLength, 101);
     expect(model.root, isNull);
     model.root = model.nodes.firstWhere((n) => model.nodes.firstWhereOrNull((c) => c.parentId == n.id) != null);

@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'orgunit.dart';
 import 'tree_list/tree_list.dart';
 
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class OuEditScreen extends StatefulWidget {
   const OuEditScreen({
     required this.id,
@@ -55,7 +57,7 @@ class _OuEditScreenState extends State<OuEditScreen> {
       final OrgUnit rootNode = nullableNode;
       return Scaffold(
         appBar: AppBar(
-          title: Text('Edit Organizational unit'),
+          title: Text(AppLocalizations.of(context)!.esTitle),
           actions: [
             IconButton(
               icon: const Icon(Icons.delete_sweep),
@@ -86,7 +88,7 @@ class _OuEditScreenState extends State<OuEditScreen> {
                             padding: EdgeInsets.all(8.0),
                             child: Align(
                                 alignment: Alignment.centerLeft,
-                                child: Text('Edit properties',
+                                child: Text(AppLocalizations.of(context)!.esEditProperties,
                                     style:
                                         Theme.of(context).textTheme.headline6)),
                           ),
@@ -95,12 +97,12 @@ class _OuEditScreenState extends State<OuEditScreen> {
                             children: [
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Text('Parent',
+                                child: Text(AppLocalizations.of(context)!.esParent,
                                     style: Theme.of(context).textTheme.button),
                               ),
                               Expanded(
                                   child: Text(rootNode.parentId == null
-                                      ? 'Root Element'
+                                      ? AppLocalizations.of(context)!.esRoot
                                       : model
                                           .findNodeById(rootNode.parentId!)!
                                           .name)),
@@ -112,7 +114,7 @@ class _OuEditScreenState extends State<OuEditScreen> {
                               Padding(
                                   padding:
                                       EdgeInsets.symmetric(horizontal: 8.0),
-                                  child: Text('Level',
+                                  child: Text(AppLocalizations.of(context)!.esLevel,
                                       style:
                                           Theme.of(context).textTheme.button)),
                               Text(rootNode.level.toString()),
@@ -123,7 +125,7 @@ class _OuEditScreenState extends State<OuEditScreen> {
                             children: [
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Text('Name',
+                                child: Text(AppLocalizations.of(context)!.esName,
                                     style: Theme.of(context).textTheme.button),
                               ),
                               Expanded(
@@ -131,11 +133,11 @@ class _OuEditScreenState extends State<OuEditScreen> {
                                   controller: _nameController,
                                   key: const Key('NameField'),
                                   decoration: InputDecoration(
-                                    hintText: "Organizational unit's name",
+                                    hintText: AppLocalizations.of(context)!.esNameHint,
                                   ),
                                   validator: (val) {
                                     return val!.trim().isEmpty
-                                        ? 'Please enter some text'
+                                        ? AppLocalizations.of(context)!.esNameValidation
                                         : null;
                                   },
                                 ),
@@ -147,7 +149,7 @@ class _OuEditScreenState extends State<OuEditScreen> {
                             children: [
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Text('Active',
+                                child: Text(AppLocalizations.of(context)!.esActive,
                                     style: Theme.of(context).textTheme.button),
                               ),
                               Switch(
@@ -179,7 +181,7 @@ class _OuEditScreenState extends State<OuEditScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           key: const Key('OUSave'),
-          tooltip: 'Save changes',
+          tooltip: AppLocalizations.of(context)!.esSaveTooltip,
           onPressed: () {
             if (_formKey.currentState!.validate()) {
               _formKey.currentState!.save();

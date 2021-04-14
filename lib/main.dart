@@ -36,10 +36,6 @@ class _OuEditorAppState extends State<OuEditorApp> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
         create: (context) => TreeListModel<OrgUnit>(
-          // createNode: ({OrgUnit? parent, int level = 0}) => OrgUnit(
-          //     name: parent == null ? AppLocalis.of(context)!.newRootItem : AppLocalizations.of(context)!.newChildItem(parent.name),
-          //     parentId: parent?.id,
-          //     level: level),
           repository: RestRepository<OrgUnit>(
               uri: 'localhost:8080',
               fromJson: OrgUnit.fromJson,
@@ -123,7 +119,7 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
 
   @override
   Widget build(BuildContext context) {
-    _model = Provider.of<TreeListModel<OrgUnit>>(context, listen: true);
+    _model = Provider.of<TreeListModel<OrgUnit>>(context, listen: false);
     _model.createNode = ({OrgUnit? parent, int level = 0}) => OrgUnit(
         name: parent == null ? AppLocalizations.of(context)!.newRootItem : AppLocalizations.of(context)!.newChildItem(parent.name),
         parentId: parent?.id,
@@ -223,8 +219,8 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
 
   void _onReorder(BuildContext context, OrgUnit source, OrgUnit? target, bool result) {
     final msg = result
-        ? 'Moved ${source.name} under ${target?.name ?? "root"}'
-        : 'Unable to move ${source.name} under one of its descendants ${target!.name}';
+        ? AppLocalizations.of(context)!.moved(source.name, "${target != null ? '\'' + target.name + '\'' : 'root'}")
+        : AppLocalizations.of(context)!.unableToMove(source.name, "${target != null ? '\'' + target.name + '\'' : 'root'}");
     _showSnackbar(context, source, msg);
   }
 
@@ -237,17 +233,17 @@ class _OuRouterDelegate extends RouterDelegate<_OuRoutePath>
 
   void _onRemove(context, node) {
     print('deleted $node');
-    _showSnackbar(context, node, 'Organizational unit ${node.name} and its children deleted');
+    _showSnackbar(context, node, AppLocalizations.of(context)!.deleted(node.name));
   }
 
   void _onSave(context, node) {
     print('updated $node');
-    _showSnackbar(context, node, 'Organizational unit ${node.name} saved');
+    _showSnackbar(context, node, AppLocalizations.of(context)!.updated(node.name));
   }
 
   void _onAdd(context, parent, newNode) {
     print('created $newNode as child of $parent');
-    _showSnackbar(context, newNode, 'Created new Organizational unit ${newNode.name}');
+    _showSnackbar(context, newNode, AppLocalizations.of(context)!.created(newNode.name));
   }
 
   void _showSnackbar(BuildContext context, OrgUnit orgUnit, String msg) {

@@ -351,11 +351,13 @@ class NoOpRepository<E extends TreeNode> implements Repository<E> {
 
   @override
   Future<List<E>> load() {
+    print('repo: load');
     return generate();
   }
 
   @override
   Future<E> update(E node) {
+    print('repo: update node=$node');
     return Future.value(node);
   }
 }

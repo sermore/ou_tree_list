@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:ou_tree_list/tree_list/model.dart';
 
 import 'orgunit.dart';
 import 'tree_list/tree_list.dart';
+
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class OuListScreen extends StatelessWidget {
   OuListScreen({
@@ -24,7 +25,7 @@ class OuListScreen extends StatelessWidget {
             icon: const Icon(Icons.menu),
             onPressed: () {},
           ),
-          title: Text('Organizational units Editor'),
+          title: Text(AppLocalizations.of(context)!.lsTitle),
         ),
         body: Column(
           children: [
