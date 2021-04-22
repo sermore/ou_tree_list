@@ -255,7 +255,7 @@ class TreeListTileCfg<E extends TreeNode> {
         ? Row(mainAxisAlignment: MainAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: <Widget>[
       IconButton(icon: const Icon(Icons.add), onPressed: () => _onAdd(context, model, node, rootLevel)),
       IconButton(icon: const Icon(Icons.delete), onPressed: () => _onRemove(context, model, node, rootLevel)),
-      // if (kIsWeb) Padding(padding: EdgeInsets.only(left: 40.0))
+      if (kIsWeb) Padding(padding: EdgeInsets.only(left: 40.0))
     ])
         : null;
   }

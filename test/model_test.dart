@@ -26,12 +26,12 @@ void main() {
     OrgUnit? n1;
     expect(await model.addNode(null, o1), predicate<OrgUnit>((node) {
       n1 = node;
-      return node.parentId == null && node.name == o1.name;
+      return node == o1;
     }));
-    expect(n1, o1);
     expect(model.totalLength, 21);
     expect(model.root, isNull);
     final o2 = OrgUnit(name: 'o2', parentId: o1.parentId, level: 1);
+
     // find a node with children and set it as root
     // model.root = model.nodes.firstWhere((n) => model.nodes.firstWhereOrNull((c) => c.parentId == n.id) != null);
     final totalLength = model.totalLength;

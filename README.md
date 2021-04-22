@@ -20,7 +20,7 @@ and a data model
 
 Data must fulfill these requirements:
 * The data item must implement the *TreeNode* mixin which defines a set of getter for required properties;
-* hierarchical items must follow *bread first* order; the library expects to receive already ordered data;
+* hierarchical items must follow *breadth first* order; the library expects to receive already ordered data;
 * the whole dataset must be loaded;
 
 This application showcase the following flutter features:
@@ -40,10 +40,6 @@ This application showcase the following flutter features:
 - [online documentation](https://flutter.dev/docs)
 
 
-TODO
-* problems after reload: the position in the tree and the state of expanded nodes are lost
-* test
-
-
-https://github.com/dart-lang/intl_translation/issues/123
-
+## TODO
+- problems after reload: the position in the tree and the state of expanded nodes are lost
+- test
