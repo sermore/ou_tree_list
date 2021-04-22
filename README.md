@@ -1,6 +1,6 @@
 # ou_tree_list
 
-A simple application to view and modify hierarchical data.
+A simple flutter application to view and modify hierarchical data.
 Features:
 * hierarchical list view using *ListView builder* and customizable *ListTile*, appropriate for a large number of children;
 * navigation into sub-trees
