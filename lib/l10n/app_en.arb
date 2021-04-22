@@ -1,0 +1,143 @@
+{
+  "title": "OrgUnit Editor App",
+  "@title": {
+    "description": "main application title"
+  },
+  "newRootItem": "A new root item",
+  "@newRootItem": {
+    "description": "Name for new root item being created"
+  },
+  "newChildItem": "A new child of '{parentName}'",
+  "@newChildItem": {
+    "description": "Name for new child item being created",
+    "placeholders": {
+      "parentName": {
+        "type": "String",
+        "example": "01 - Programmer"
+      }
+    }
+  },
+  "moved": "Moved '{sourceName}' under {targetName}",
+  "@moved": {
+    "description": "Message when a sub-tree is successfully moved",
+    "placeholders": {
+      "sourceName": {
+        "type": "String",
+        "example": "04 - Dentist"
+      },
+      "targetName": {
+        "type": "String",
+        "example": "03 Chemist or Root"
+      }
+    }
+  },
+  "unableToMove": "Unable to move '{sourceName}' under one of its descendants {targetName}",
+  "@unableToMove": {
+    "description": "Error message when a move request is not possible",
+    "placeholders": {
+      "sourceName": {
+        "type": "String",
+        "example": "04 - Dentist"
+      },
+      "targetName": {
+        "type": "String",
+        "example": "03 Chemist or Root"
+      }
+    }
+  },
+  "deleted": "Organizational unit '{nodeName}' and its children deleted",
+  "@deleted": {
+    "description": "Message when a sub-tree is successfully deleted",
+    "placeholders": {
+      "nodeName": {
+        "type": "String",
+        "example": "04 - Dentist"
+      }
+    }
+  },
+  "updated": "Organizational unit '{nodeName}' saved",
+  "@updated": {
+    "description": "Message when a node is successfully updated",
+    "placeholders": {
+      "nodeName": {
+        "type": "String",
+        "example": "04 - Dentist"
+      }
+    }
+  },
+  "created": "Created new Organizational unit '{nodeName}'",
+  "@created": {
+    "description": "Message when a node is successfully created",
+    "placeholders": {
+      "nodeName": {
+        "type": "String",
+        "example": "04 - Dentist"
+      }
+    }
+  },
+  "esTitle": "Edit Organizational unit",
+  "@esTitle": {
+    "description": "Edit screen: main title"
+  },
+  "esEditProperties": "Edit Properties",
+  "@esEditProperties": {
+    "description": "Edit screen: Title of detail's card"
+  },
+  "esParent": "Padre",
+  "@esParent": {
+    "description": "Edit screen: Label for parent's field"
+  },
+  "esRoot": "Root Element",
+  "@esRoot": {
+    "description": "Edit screen: Label to use to describe parent for root elements"
+  },
+  "esLevel": "Level",
+  "@esLevel": {
+    "description": "Edit screen: Label for Level field"
+  },
+  "esName": "Name",
+  "@esName": {
+    "description": "Edit screen: Label for Name field"
+  },
+  "esNameHint": "Organizational unit's name",
+  "@esNameHint": {
+    "description": "Edit screen: Hint for Name field"
+  },
+  "esNameValidation": "Please enter some text",
+  "@esNameValidation": {
+    "description": "Edit screen: Validation message for Name field"
+  },
+  "esActive": "Active",
+  "@esActive": {
+    "description": "Edit screen: Label for Active field"
+  },
+  "esSaveTooltip": "Save changes",
+  "@esSaveTooltip": {
+    "description": "Edit screen: Tooltip for save button"
+  },
+  "lsTitle": "Organizational units Editor",
+  "@lsTitle": {
+    "description": "List screen: main title"
+  },
+  "tlToggleTooltip": "Toggle tree expansion",
+  "@tlToggleTooltip": {
+    "description": "TreeListButtonBar: Tooltip for toggle tree expansion icon"
+  },
+  "tlReload": "Reload",
+  "@tlReload": {
+    "description": "TreeListButtonBar: Tooltip for reload icon"
+  },
+  "tlAddTooltip": "Add a root item",
+  "@tlAddTooltip": {
+    "description": "TreeListButtonBar: Tooltip for add icon"
+  },
+  "tlSwitchTooltip": "Enable Editable mode",
+  "@tlSwitchTooltip": {
+    "description": "TreeListButtonBar: Tooltip for add icon"
+  },
+  "tlLength": "Length",
+  "@tlLength": {
+    "description": "TreeListButtonBar: Length label"
+  }
+
+}

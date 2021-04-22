@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:ou_tree_list/tree_list/model.dart';
 
 import 'orgunit.dart';
 import 'tree_list/tree_list.dart';
 
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class OuListScreen extends StatelessWidget {
   OuListScreen({
-    required this.listTileBuilder,
+    required this.treeListTileCfg,
     required this.onReorder,
-    required this.onAdd,
   });
 
-  final TreeListTileBuilder<OrgUnit> Function(
-      BuildContext context, TreeListModel<OrgUnit> model, OrgUnit node, int rootLevel) listTileBuilder;
-  final void Function(BuildContext context, OrgUnit? parent, OrgUnit newNode) onAdd;
-  final void Function(BuildContext context, OrgUnit source, OrgUnit? target, bool result) onReorder;
+  final TreeListTileCfg<OrgUnit> treeListTileCfg;
+  final void Function(
+          BuildContext context, OrgUnit source, OrgUnit? target, bool result)
+      onReorder;
 
   @override
   Widget build(BuildContext context) {
@@ -25,17 +25,16 @@ class OuListScreen extends StatelessWidget {
             icon: const Icon(Icons.menu),
             onPressed: () {},
           ),
-          title: Text('Organizational units Editor'),
+          title: Text(AppLocalizations.of(context)!.lsTitle),
         ),
         body: Column(
           children: [
-            TreeListButtonBar<OrgUnit>(
-                onAdd: (BuildContext context, OrgUnit? parent, OrgUnit newNode) => onAdd(context, parent, newNode)),
+            TreeListButtonBar<OrgUnit>(treeListTileCfg: treeListTileCfg),
             const Divider(),
             Expanded(
                 child: TreeListView<OrgUnit>(
               onReorder: onReorder,
-              listTileBuilder: listTileBuilder,
+              treeListTileCfg: treeListTileCfg,
             ))
           ],
         ));

@@ -1,0 +1,10 @@
+{
+    "title": "Editor per gerarchie di Unità organizzative",
+    "newRootItem": "Un nuovo elemento radice",
+    "newChildItem": "Un nuovo figlio di {parentName}",
+    "moved": "Spostato '{sourceName}' sotto {targetName}",
+    "unableToMove": "Impossibile spostare '{sourceName}' sotto uno dei suoi discendenti {targetNname}",
+    "deleted": "L'unità organizzativa '{nodeName}' ed i suoi discendenti è stata eliminata",
+    "updated": "L'unità organizzativa '{nodeName}' è stata salvata",
+    "created": "L'unità organizzativa '{nodeName}' è stata creata"
+}

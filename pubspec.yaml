@@ -23,7 +23,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  uuid: ^3.0.2
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.17.0-nullsafety.2
+#  intl_translation: ^0.17.10+1
+#    git:
+#      url: https://github.com/nt4f04uNd/intl_translation
+  uuid: ^3.0.4
   provider: ^5.0.0
   english_words: ^4.0.0-nullsafety.0
   tuple: ^2.0.0
@@ -43,6 +49,7 @@ dev_dependencies:
 
 # The following section is specific to Flutter.
 flutter:
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
@@ -79,3 +86,5 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+flutter_intl:
+  enabled: true
